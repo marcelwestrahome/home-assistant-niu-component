@@ -1,0 +1,32 @@
+sensor:
+  - platform: niu
+    email: !secret niu_email
+    password: !secret niu_password
+    country : !secret niu_country
+    scooter_id : '0'
+    name: 'niu_black_'
+    monitored_variables:
+    - BatteryCharge
+    - Isconnected 
+    - TimesCharged 
+    - temperatureDesc
+    - Temperature
+    - BatteryGrade
+    - CurrentSpeed
+    - IsConnected2
+    - IsCharging
+    - IsLocked
+    - GSMSignal
+    - GPSSignal
+    - TimeLeft
+    - EstimatedMileage
+    - centreCtrlBatt
+    - PosLat
+    - PosLng
+    - HDOP
+    - Timestamp
+    - Distance
+    - RidingTime
+    - totalMileage
+    - DaysInUse
+    - LastUpdate
