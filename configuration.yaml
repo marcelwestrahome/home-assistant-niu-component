@@ -4,8 +4,7 @@ sensor:
     password: !secret niu_password
     country : !secret niu_country
     scooter_id : '0'
-    name: 'niu_black_'
-    monitored_variables:
+    monitored_variables:  
     - BatteryCharge
     - Isconnected 
     - TimesCharged 
@@ -13,20 +12,14 @@ sensor:
     - Temperature
     - BatteryGrade
     - CurrentSpeed
-    - IsConnected2
+    - ScooterConnected
     - IsCharging
     - IsLocked
-    - GSMSignal
-    - GPSSignal
     - TimeLeft
     - EstimatedMileage
     - centreCtrlBatt
-    - PosLat
-    - PosLng
     - HDOP
-    - Timestamp
     - Distance
     - RidingTime
     - totalMileage
     - DaysInUse
-    - LastUpdate
