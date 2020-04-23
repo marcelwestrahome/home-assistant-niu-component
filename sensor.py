@@ -44,7 +44,7 @@ def get_token(email, password, cc):
     return data['data']['token']
 
 
-def get_vehicles(token,id):
+def get_vehicles_info(token):
 
     url = API_BASE_URL + '/motoinfo/list'
     headers = {'token': token, 'Accept-Language': 'en-US'}
@@ -55,7 +55,7 @@ def get_vehicles(token,id):
     if r.status_code != 200:
         return False
     data = json.loads(r.content.decode())
-    return data['data'][id]['sn']
+    return data
 
 
 
@@ -109,6 +109,8 @@ SENSOR_TYPE_OVERALL = 'TOTAL'
 SENSOR_TYPE_POS = 'POSITION'
 SENSOR_TYPE_SYSTEM = 'SYSTEM'
 
+#MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=60)
+
 _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = vol.Schema({
@@ -126,51 +128,39 @@ CONFIG_SCHEMA = vol.Schema({
                                                           'Temperature',
                                                           'BatteryGrade',
                                                           'CurrentSpeed',
-                                                          'IsConnected2',
+                                                          'ScooterConnected',
                                                           'IsCharging',
                                                           'IsLocked',
-                                                          'GSMSignal',
-                                                          'GPSSignal',
                                                           'TimeLeft',
                                                           'EstimatedMileage',
                                                           'centreCtrlBatt',
-                                                          'PosLat',
-                                                          'PosLng',
                                                           'HDOP',
-                                                          'Timestamp',
                                                           'Distance',
                                                           'RidingTime',
-                                                          'totalMileage,'
-                                                          'DaysInUse',
-                                                          'LastUpdate'])])
+                                                          'totalMileage',
+                                                          'DaysInUse' ])])
     })
 }, extra=vol.ALLOW_EXTRA)
 
 SENSOR_TYPES = {
-    'BatteryCharge': ['battery_charge', '%', 'mdi:battery', 'batteryCharging', SENSOR_TYPE_BAT],
-    'Isconnected': ['is_connected', '', 'mdi:resistor', 'isConnected', SENSOR_TYPE_BAT],
-    'TimesCharged': ['times_charged', 'x', 'mdi:numeric', 'chargedTimes', SENSOR_TYPE_BAT],
-    'temperatureDesc': ['temp_descr', '', 'mdi:thermometer', 'temperatureDesc', SENSOR_TYPE_BAT],
-    'Temperature': ['temperature', '°C', 'mdi:thermometer', 'temperature', SENSOR_TYPE_BAT],
-    'BatteryGrade': ['battery_grade', '%', 'mdi:battery', 'gradeBattery', SENSOR_TYPE_BAT],
-    'CurrentSpeed': ['current_speed',  '', 'mdi:speedometer', 'nowSpeed', SENSOR_TYPE_MOTO],
-    'IsConnected2': ['is_connected2',  '', 'mdi:resistor', 'isConnected', SENSOR_TYPE_MOTO],
-    'IsCharging': ['is_charging',  '', 'mdi:battery-charging-high', 'isCharging', SENSOR_TYPE_MOTO],
-    'IsLocked': ['is_locked', '', 'mdi:lock', 'lockStatus', SENSOR_TYPE_MOTO],
-    'GSMSignal': ['gsm_signal',  '', 'mdi:signal', 'gsm', SENSOR_TYPE_MOTO],
-    'GPSSignal': ['gps_signal',  '', 'mdi:map-marker-multiple-outline', 'gps', SENSOR_TYPE_MOTO],
-    'TimeLeft': ['time_left',  '', 'mdi:clock', 'leftTime', SENSOR_TYPE_MOTO],
-    'EstimatedMileage': ['estimated_mileage',  'km', 'mdi:ray-start-arrow', 'estimatedMileage', SENSOR_TYPE_MOTO],
-    'centreCtrlBatt': ['centre_ctrl_batt',  '', 'mdi:battery', 'centreCtrlBattery', SENSOR_TYPE_MOTO],
-    'PosLat': ['pos_lat',  '', 'mdi:map-marker', 'lat', SENSOR_TYPE_POS],
-    'PosLng': ['pos_lng',  '', 'mdi:map-marker', 'lng', SENSOR_TYPE_POS],
-    'HDOP': ['hdp',  '', '', 'hdop', SENSOR_TYPE_MOTO],
-    'Timestamp': ['time_stamp', '', 'mdi:clock', 'time', SENSOR_TYPE_DIST],
-    'Distance': ['distance',  'km', 'mdi:ray-start-arrow', 'distance', SENSOR_TYPE_DIST],
-    'RidingTime': ['riding_time', '', 'mdi:clock', 'ridingTime', SENSOR_TYPE_DIST],
-    'totalMileage': ['total_mileage',  'km', 'mdi:ray-start-arrow', 'totalMileage', SENSOR_TYPE_OVERALL],
-    'DaysInUse': ['bind_days_count',  '', 'mdi:calendar-month', 'bindDaysCount', SENSOR_TYPE_OVERALL],
-    'LastUpdate': ['last_update',  '', 'mdi:calendar-month', 'LastUpdate', SENSOR_TYPE_SYSTEM]
+    'BatteryCharge': ['battery_charge', '%', 'batteryCharging', SENSOR_TYPE_BAT,'battery'],
+    'Isconnected': ['is_connected', '', 'isConnected', SENSOR_TYPE_BAT,'connectivity'],
+    'TimesCharged': ['times_charged', 'x', 'chargedTimes', SENSOR_TYPE_BAT,'none'],
+    'temperatureDesc': ['temp_descr', '', 'temperatureDesc', SENSOR_TYPE_BAT,'none'],
+    'Temperature': ['temperature', '°C', 'temperature', SENSOR_TYPE_BAT,'temperature'],
+    'BatteryGrade': ['battery_grade', '%', 'gradeBattery', SENSOR_TYPE_BAT,'battery'],
+    'CurrentSpeed': ['current_speed',  'km/h', 'nowSpeed', SENSOR_TYPE_MOTO,'none'],
+    'ScooterConnected': ['scooter_connected', '', 'isConnected', SENSOR_TYPE_MOTO,'connectivity'],
+    'IsCharging': ['is_charging', '', 'isCharging', SENSOR_TYPE_MOTO,'power'],
+    'IsLocked': ['is_locked', '', 'lockStatus', SENSOR_TYPE_MOTO,'lock'],
+    'TimeLeft': ['time_left',  '','leftTime', SENSOR_TYPE_MOTO,'none'],
+    'EstimatedMileage': ['estimated_mileage', 'km', 'estimatedMileage', SENSOR_TYPE_MOTO,'none'],
+    'centreCtrlBatt': ['centre_ctrl_batt', '', 'centreCtrlBattery', SENSOR_TYPE_MOTO,'none'],
+    'HDOP': ['hdp',  '', 'hdop', SENSOR_TYPE_MOTO,'none'],
+    'Distance': ['distance', 'km', 'distance', SENSOR_TYPE_DIST,'none'],
+    'RidingTime': ['riding_time', '','ridingTime', SENSOR_TYPE_DIST,'none'],
+    'totalMileage': ['total_mileage', 'km', 'totalMileage', SENSOR_TYPE_OVERALL,'none'],
+    'DaysInUse': ['bind_days_count', 'days', 'bindDaysCount', SENSOR_TYPE_OVERALL,'none'],
 }
 
 
@@ -180,37 +170,39 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     email = config.get(CONF_EMAIL)
     password = config.get(CONF_PASSWORD)
     country = config.get(CONF_COUNTRY)
-    id_scooter = config.get(CONF_ID)
-    sensor_prefix = config.get(CONF_NAME)
+    id_scooter = int(config.get(CONF_ID))
+    #sensor_prefix = config.get(CONF_NAME)
 
     #get token and unique scooter sn
     token = get_token(email, password, country)
-    sn = get_vehicles(token,int(id_scooter))
+    sn = get_vehicles_info(token)['data'][id_scooter]['sn']
+    sensor_prefix = get_vehicles_info(token)['data'][id_scooter]['name']
     sensors = config.get(CONF_MONITORED_VARIABLES)
     
     #init data class
     data_bridge = NuiDataBridge(sn,token)
+    data_bridge.updateBat()
+    data_bridge.updateMoto()
+    data_bridge.updateMotoInfo()
 
     #add sensors
     devices = []   
     for sensor in sensors:
         sensor_config = SENSOR_TYPES[sensor]
-        devices.append(NuiSensor(data_bridge, sensor, sensor_config[0], sensor_config[1], sensor_config[2],  sensor_config[3],sensor_config[4], sensor_prefix))
-
+        devices.append(NuiSensor(data_bridge, sensor, sensor_config[0], sensor_config[1], sensor_config[2],sensor_config[3], sensor_prefix, sensor_config[4] ))
     add_devices(devices)
 
 
 class NuiDataBridge(object):
 
     def __init__(self, sn, token):
-                
+
         self._dataBat = None
         self._dataMoto = None
         self._dataMotoInfo = None
         self._sn = sn
         self._token = token
-        self._lastupdate = 'please turn on niu scooter (scooter does not send status after certain time locked)'
-           
+     
     def dataBat(self, id_field):
         return self._dataBat['data']['batteries']['compartmentA'][id_field]
 
@@ -226,80 +218,93 @@ class NuiDataBridge(object):
     def dataOverall(self, id_field):
         return self._dataMotoInfo['data'][id_field]
 
-    def dataSystem(self, id_field):
-        return self._lastupdate
+  
+    @Throttle(timedelta(seconds=1))
+    def updateBat(self):
+        self._dataBat = get_info(BATINFO_BASE_URL,self._sn,self._token)
 
-    @Throttle(timedelta(minutes=10))
-    def update(self):
-
-        data = get_info(BATINFO_BASE_URL,self._sn,self._token)
-
-        #test to pass the niu bug of disconnected scooter
-        if data['data']['batteries']['compartmentA']['batteryCharging'] != 0 :
-            self._dataBat = get_info(BATINFO_BASE_URL,self._sn,self._token)
-            self._lastupdate = strftime("%Y-%m-%d %H:%M:%S", gmtime())
-        else: 
-            self._dataBat = None
-
+    @Throttle(timedelta(seconds=1))
+    def updateMoto(self):
         self._dataMoto = get_info(MOTOINDEX_BASE_URL, self._sn,self._token)
+
+    @Throttle(timedelta(seconds=1))
+    def updateMotoInfo(self):
         self._dataMotoInfo = post_info(MOTOINFO_BASE_URL, self._sn,self._token)
-           
-        
-       
-        
+
 class NuiSensor(Entity):
 
-    def __init__(self, data_bridge, name,  sensor_id, uom, icon, id_name,sensor_grp, sensor_prefix):
-        self._name = name
-        self._property = name
-        self._icon = icon
+    def __init__(self, data_bridge, name,  sensor_id, uom, id_name,sensor_grp, sensor_prefix, device_class):
+        self._name = 'NIU Scooter ' + sensor_prefix + ' ' + name
         self._uom = uom
         self._data_bridge = data_bridge
-        self.entity_id = 'sensor.'+ sensor_prefix + sensor_id
-        self._id_name = id_name
-        self._state = '..'
-        self._sensor_grp = sensor_grp
-        self._raw = None
+        self._entity_id = 'sensor.niu_scooter_'+ sensor_prefix + '_' + sensor_id
+        self._device_class = device_class
+        self._id_name = id_name  #info field for parsing the URL
+        self._sensor_grp = sensor_grp #info field for choosing the right URL
+    
+    #first init
+        if self._sensor_grp == SENSOR_TYPE_BAT:
+            self._state = self._data_bridge.dataBat(self._id_name)
+        elif self._sensor_grp == SENSOR_TYPE_MOTO:
+            self._state = self._data_bridge.dataMoto(self._id_name)
+        elif self._sensor_grp == SENSOR_TYPE_POS:
+            self._state = self._data_bridge.dataPos(self._id_name)
+        elif self._sensor_grp == SENSOR_TYPE_DIST:
+            self._state = self._data_bridge.dataDist(self._id_name)
+        elif self._sensor_grp == SENSOR_TYPE_OVERALL:
+            self._state = self._data_bridge.dataOverall(self._id_name)
+
 
     @property
     def name(self):
         return self._name
 
     @property
-    def icon(self):
-        return self._icon
-
-    @property
     def unit_of_measurement(self):
         return self._uom
-
+     
+    @property
+    def entity_id(self):
+        return self._entity_id
+ 
     @property
     def state(self):
         return self._state
 
     @property
-    def state_attributes(self):
-        if self._raw is not None:
-            return {'ScooterID' : self._data_bridge.dataBat('bmsId') }
-       
-    
-    def update(self):
-        self._data_bridge.update()
-    
-        if self._sensor_grp == SENSOR_TYPE_BAT:
-            self._raw = self._data_bridge.dataBat(self._id_name)
-        elif self._sensor_grp == SENSOR_TYPE_MOTO:
-            self._raw = self._data_bridge.dataMoto(self._id_name)
-        elif self._sensor_grp == SENSOR_TYPE_POS:
-            self._raw = self._data_bridge.dataPos(self._id_name) 
-        elif self._sensor_grp == SENSOR_TYPE_DIST:
-            self._raw = self._data_bridge.dataDist(self._id_name) 
-        elif self._sensor_grp == SENSOR_TYPE_OVERALL:
-            self._raw = self._data_bridge.dataOverall(self._id_name) 
-        elif self._sensor_grp == SENSOR_TYPE_SYSTEM:
-            self._state = self._data_bridge.dataSystem(self._id_name)
-        
-        if self._raw is not None:
-             self._state = self._raw
+    def device_class(self):
+        return self._device_class
 
-   
+    @property
+    def state_attributes(self):
+        if  self._sensor_grp == SENSOR_TYPE_MOTO and self._id_name =='isConnected':
+            return {'bmsId' : self._data_bridge.dataBat('bmsId'),
+                    'latitude' : self._data_bridge.dataPos('lat'),
+                    'longitude': self._data_bridge.dataPos('lng'),
+                    'gsm': self._data_bridge.dataMoto('gsm'),
+                    'gps': self._data_bridge.dataMoto('gps'),
+                    'time': self._data_bridge.dataDist('time'),
+            }
+
+
+    def update(self):
+        if self._sensor_grp == SENSOR_TYPE_BAT:
+            self._data_bridge.updateBat()
+            if not (self._id_name == 'batteryCharging' or self._id_name == 'temperature') and self._data_bridge.dataBat('batteryCharging') == 0:
+                self._state = self._data_bridge.dataBat(self._id_name)
+        elif self._sensor_grp == SENSOR_TYPE_MOTO:
+            self._data_bridge.updateMoto()
+            if not (self._id_name == 'estimatedMileage' or self._id_name == 'leftTime') and self._data_bridge.dataMoto('estimatedMileage') == 0:
+                self._state = self._data_bridge.dataMoto(self._id_name)
+        elif self._sensor_grp == SENSOR_TYPE_POS:
+            self._data_bridge.updateMoto()
+            self._state = self._data_bridge.dataPos(self._id_name)
+        elif self._sensor_grp == SENSOR_TYPE_DIST:
+            self._data_bridge.updateMoto()
+            self._state = self._data_bridge.dataDist(self._id_name)
+        elif self._sensor_grp == SENSOR_TYPE_OVERALL:
+            self._data_bridge.updateMotoInfo()
+            self._state = self._data_bridge.dataOverall(self._id_name)
+           
+ 
+
