@@ -8,6 +8,8 @@ etc
 
 USername and password are the credentials of the niu app.
 
-At thsi moment the NIU sport plus ahas a bug, at least this type scooter stops after a certain time updating.
+At this moment the NIU sport plus ahas a bug, at least this type scooter stops after a certain time updating.
 When this happen, component will show the last updated values.
 Niu promises with a new firmware to solve this problem.
+
+Niu.py is not needed
