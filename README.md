@@ -15,7 +15,7 @@ Niu promises with a new firmware to solve this problem.
 
 Installation:
 
-copy "_ init_.py, manifest.json. sensor.py" to custom_components\niu directory
+copy "_ init_.py, manifest.json, sensor.py" to custom_components\niu directory
 
 add the following to your configuration file and fill in your email address, password and country
 
