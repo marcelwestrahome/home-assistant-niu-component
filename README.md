@@ -23,10 +23,10 @@ restart home assistant
 
 sensor:
   - platform: niu
-    email: ##your email address##
-    password: ##your password##
-    country : ##your country##
-    scooter_id : '0'
+    email: _your email address
+    password: _your password
+    country : _your country
+    scooter_id : '0'  //scouter ID, first scooter 0, second 1 (add the whole config for the second scooter but with next id) 
     monitored_variables:  
     - BatteryCharge
     - Isconnected 
