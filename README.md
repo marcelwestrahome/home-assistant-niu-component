@@ -17,32 +17,8 @@ Installation:
 
 copy "_ init_.py, manifest.json, sensor.py" to custom_components\niu directory
 
-add the following to your configuration file and fill in your email address, password and country
+see configuration.json for adding the sensors to your system, change email address, password and country
 
 restart home assistant
 
-sensor:
-  - platform: niu
-    email: _your email address
-    password: _your password
-    country : _your country
-    scooter_id : '0'  //scouter ID, first scooter 0, second 1 (add the whole config for the second scooter but with next id) 
-    monitored_variables:  
-    - BatteryCharge
-    - Isconnected 
-    - TimesCharged 
-    - temperatureDesc
-    - Temperature
-    - BatteryGrade
-    - CurrentSpeed
-    - ScooterConnected
-    - IsCharging
-    - IsLocked
-    - TimeLeft
-    - EstimatedMileage
-    - centreCtrlBatt
-    - HDOP
-    - Distance
-    - RidingTime
-    - totalMileage
-    - DaysInUse
+
