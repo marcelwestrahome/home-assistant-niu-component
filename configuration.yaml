@@ -19,7 +19,7 @@ sensor:
     - EstimatedMileage
     - centreCtrlBatt
     - HDOP
-    - Distance
-    - RidingTime
+#    - Distance
+#    - RidingTime
     - totalMileage
     - DaysInUse
