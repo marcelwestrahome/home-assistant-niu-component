@@ -237,7 +237,7 @@ class NuiSensor(Entity):
         self._name = 'NIU Scooter ' + sensor_prefix + ' ' + name
         self._uom = uom
         self._data_bridge = data_bridge
-        self._entity_id = 'sensor.niu_scooter_'+ sensor_prefix + '_' + sensor_id
+        self._entity_id = 'sensor.niu_scooter_'+ sensor_prefix.lower() + '_' + sensor_id
         self._device_class = device_class
         self._id_name = id_name  #info field for parsing the URL
         self._sensor_grp = sensor_grp #info field for choosing the right URL
