@@ -1,7 +1,7 @@
 """
 @ Author      : Marcel Westra
 @ Date        : 21/03/2020
-@ Description : Nui Sensor - Monitor Nui Scooters. 
+@ Description : Niu Sensor - Monitor Niu Scooters.
 """
 VERSION = '0.0.1'
 
@@ -95,7 +95,7 @@ def post_info(path, sn, token):
 # end to add to include file
 #*****************************************************************
 
-DOMAIN = 'nui'
+DOMAIN = 'niu'
 CONF_EMAIL = 'email'
 CONF_PASSWORD = 'password'
 CONF_COUNTRY = 'country'
@@ -121,9 +121,9 @@ CONFIG_SCHEMA = vol.Schema({
         vol.Required(CONF_ID): cv.positive_int,
         vol.Required(CONF_NAME): cv.string,
         vol.Optional(CONF_MONITORED_VARIABLES, default=['BatteryCharge']): vol.All(
-            cv.ensure_list, vol.Length(min=1), [vol.In(['BatteryCharge', 
-                                                          'Isconnected', 
-                                                          'TimesCharged', 
+            cv.ensure_list, vol.Length(min=1), [vol.In(['BatteryCharge',
+                                                          'Isconnected',
+                                                          'TimesCharged',
                                                           'temperatureDesc',
                                                           'Temperature',
                                                           'BatteryGrade',
@@ -165,7 +165,7 @@ SENSOR_TYPES = {
 
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
-    
+
     #get config variables
     email = config.get(CONF_EMAIL)
     password = config.get(CONF_PASSWORD)
@@ -177,23 +177,27 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     token = get_token(email, password, country)
     sn = get_vehicles_info(token)['data'][id_scooter]['sn']
     sensor_prefix = get_vehicles_info(token)['data'][id_scooter]['name']
-    sensors = config.get(CONF_MONITORED_VARIABLES)
+    sensor_prefix = sensor_prefix.replace(" ", "_")
+    sensor_prefix = sensor_prefix.lower()
+    sensor_prefix = sensor_prefix.replace("’", "")
     
+    sensors = config.get(CONF_MONITORED_VARIABLES)
+
     #init data class
-    data_bridge = NuiDataBridge(sn,token)
+    data_bridge = NiuDataBridge(sn,token)
     data_bridge.updateBat()
     data_bridge.updateMoto()
     data_bridge.updateMotoInfo()
 
     #add sensors
-    devices = []   
+    devices = []
     for sensor in sensors:
         sensor_config = SENSOR_TYPES[sensor]
-        devices.append(NuiSensor(data_bridge, sensor, sensor_config[0], sensor_config[1], sensor_config[2],sensor_config[3], sensor_prefix, sensor_config[4] ))
+        devices.append(NiuSensor(data_bridge, sensor, sensor_config[0], sensor_config[1], sensor_config[2],sensor_config[3], sensor_prefix, sensor_config[4] ))
     add_devices(devices)
 
 
-class NuiDataBridge(object):
+class NiuDataBridge(object):
 
     def __init__(self, sn, token):
 
@@ -202,7 +206,7 @@ class NuiDataBridge(object):
         self._dataMotoInfo = None
         self._sn = sn
         self._token = token
-     
+
     def dataBat(self, id_field):
         return self._dataBat['data']['batteries']['compartmentA'][id_field]
 
@@ -218,7 +222,7 @@ class NuiDataBridge(object):
     def dataOverall(self, id_field):
         return self._dataMotoInfo['data'][id_field]
 
-  
+
     @Throttle(timedelta(seconds=1))
     def updateBat(self):
         self._dataBat = get_info(BATINFO_BASE_URL,self._sn,self._token)
@@ -231,7 +235,7 @@ class NuiDataBridge(object):
     def updateMotoInfo(self):
         self._dataMotoInfo = post_info(MOTOINFO_BASE_URL, self._sn,self._token)
 
-class NuiSensor(Entity):
+class NiuSensor(Entity):
 
     def __init__(self, data_bridge, name,  sensor_id, uom, id_name,sensor_grp, sensor_prefix, device_class):
         self._name = 'NIU Scooter ' + sensor_prefix + ' ' + name
@@ -241,7 +245,7 @@ class NuiSensor(Entity):
         self._device_class = device_class
         self._id_name = id_name  #info field for parsing the URL
         self._sensor_grp = sensor_grp #info field for choosing the right URL
-    
+
     #first init
         if self._sensor_grp == SENSOR_TYPE_BAT:
             self._state = self._data_bridge.dataBat(self._id_name)
@@ -262,11 +266,11 @@ class NuiSensor(Entity):
     @property
     def unit_of_measurement(self):
         return self._uom
-     
+
     @property
     def entity_id(self):
         return self._entity_id
- 
+
     @property
     def state(self):
         return self._state
@@ -305,6 +309,3 @@ class NuiSensor(Entity):
         elif self._sensor_grp == SENSOR_TYPE_OVERALL:
             self._data_bridge.updateMotoInfo()
             self._state = self._data_bridge.dataOverall(self._id_name)
-           
- 
-
