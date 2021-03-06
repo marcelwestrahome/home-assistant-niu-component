@@ -1,3 +1,7 @@
+Working on another project at this moment, building a campervan. 
+If this is finished I will update the component
+HA is also starting with a project for a native component
+
 # niu
 
 Home assistant niu sensor component to read the parameters of your scooter
