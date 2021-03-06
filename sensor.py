@@ -177,6 +177,9 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     token = get_token(email, password, country)
     sn = get_vehicles_info(token)['data'][id_scooter]['sn']
     sensor_prefix = get_vehicles_info(token)['data'][id_scooter]['name']
+    sensor_prefix = sensor_prefix.replace(" ", "_")
+    sensor_prefix = sensor_prefix.lower()
+    sensor_prefix = sensor_prefix.replace("’", "")
     sensors = config.get(CONF_MONITORED_VARIABLES)
     
     #init data class
