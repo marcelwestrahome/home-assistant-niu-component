@@ -143,14 +143,14 @@ CONFIG_SCHEMA = vol.Schema({
 }, extra=vol.ALLOW_EXTRA)
 
 SENSOR_TYPES = {
-    'BatteryCharge': ['battery_charge', '%', 'batteryCharging', SENSOR_TYPE_BAT,'battery', 'mdi:battery-charging'],
+    'BatteryCharge': ['battery_charge', '%', 'batteryCharging', SENSOR_TYPE_BAT,'battery', 'mdi:battery-charging-50'],
     'Isconnected': ['is_connected', '', 'isConnected', SENSOR_TYPE_BAT,'connectivity','mdi:connection'],
-    'TimesCharged': ['times_charged', 'x', 'chargedTimes', SENSOR_TYPE_BAT,'none',''],
-    'temperatureDesc': ['temp_descr', '', 'temperatureDesc', SENSOR_TYPE_BAT,'none',''],
+    'TimesCharged': ['times_charged', 'x', 'chargedTimes', SENSOR_TYPE_BAT,'none','mdi:battery-charging-wireless'],
+    'temperatureDesc': ['temp_descr', '', 'temperatureDesc', SENSOR_TYPE_BAT,'none','mdi:thermometer-alert'],
     'Temperature': ['temperature', '°C', 'temperature', SENSOR_TYPE_BAT,'temperature','mdi:thermometer'],
     'BatteryGrade': ['battery_grade', '%', 'gradeBattery', SENSOR_TYPE_BAT,'battery','mdi:car-battery'],
     'CurrentSpeed': ['current_speed',  'km/h', 'nowSpeed', SENSOR_TYPE_MOTO,'none','mdi:speedometer'],
-    'ScooterConnected': ['scooter_connected', '', 'isConnected', SENSOR_TYPE_MOTO,'connectivity','motorbike-electric'],
+    'ScooterConnected': ['scooter_connected', '', 'isConnected', SENSOR_TYPE_MOTO,'connectivity','mdi:motorbike-electric'],
     'IsCharging': ['is_charging', '', 'isCharging', SENSOR_TYPE_MOTO,'power','mdi:battery-charging'],
     'IsLocked': ['is_locked', '', 'lockStatus', SENSOR_TYPE_MOTO,'lock','mdi:lock'],
     'TimeLeft': ['time_left',  '','leftTime', SENSOR_TYPE_MOTO,'none','mdi:av-timer'],
@@ -159,7 +159,7 @@ SENSOR_TYPES = {
     'HDOP': ['hdp',  '', 'hdop', SENSOR_TYPE_MOTO,'none','mdi:map-marker'],
     'Distance': ['distance', 'km', 'distance', SENSOR_TYPE_DIST,'none','mdi:map-marker-distance'],
     'RidingTime': ['riding_time', '','ridingTime', SENSOR_TYPE_DIST,'none','mdi:map-clock'],
-    'totalMileage': ['total_mileage', 'km', 'totalMileage', SENSOR_TYPE_OVERALL,'none',''],
+    'totalMileage': ['total_mileage', 'km', 'totalMileage', SENSOR_TYPE_OVERALL,'none','mdi:map-marker-distance'],
     'DaysInUse': ['bind_days_count', 'days', 'bindDaysCount', SENSOR_TYPE_OVERALL,'none','mdi:calendar-today'],
 }
 
