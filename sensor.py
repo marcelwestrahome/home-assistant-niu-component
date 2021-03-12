@@ -1,7 +1,7 @@
 """
 @ Author      : Marcel Westra
 @ Date        : 21/03/2020
-@ Description : Nui Sensor - Monitor Nui Scooters. 
+@ Description : Niu Sensor - Monitor Niu Scooters.
 """
 VERSION = '0.0.1'
 
@@ -95,7 +95,7 @@ def post_info(path, sn, token):
 # end to add to include file
 #*****************************************************************
 
-DOMAIN = 'nui'
+DOMAIN = 'niu'
 CONF_EMAIL = 'email'
 CONF_PASSWORD = 'password'
 CONF_COUNTRY = 'country'
@@ -121,9 +121,9 @@ CONFIG_SCHEMA = vol.Schema({
         vol.Required(CONF_ID): cv.positive_int,
         vol.Required(CONF_NAME): cv.string,
         vol.Optional(CONF_MONITORED_VARIABLES, default=['BatteryCharge']): vol.All(
-            cv.ensure_list, vol.Length(min=1), [vol.In(['BatteryCharge', 
-                                                          'Isconnected', 
-                                                          'TimesCharged', 
+            cv.ensure_list, vol.Length(min=1), [vol.In(['BatteryCharge',
+                                                          'Isconnected',
+                                                          'TimesCharged',
                                                           'temperatureDesc',
                                                           'Temperature',
                                                           'BatteryGrade',
@@ -143,29 +143,29 @@ CONFIG_SCHEMA = vol.Schema({
 }, extra=vol.ALLOW_EXTRA)
 
 SENSOR_TYPES = {
-    'BatteryCharge': ['battery_charge', '%', 'batteryCharging', SENSOR_TYPE_BAT,'battery'],
-    'Isconnected': ['is_connected', '', 'isConnected', SENSOR_TYPE_BAT,'connectivity'],
-    'TimesCharged': ['times_charged', 'x', 'chargedTimes', SENSOR_TYPE_BAT,'none'],
-    'temperatureDesc': ['temp_descr', '', 'temperatureDesc', SENSOR_TYPE_BAT,'none'],
-    'Temperature': ['temperature', '°C', 'temperature', SENSOR_TYPE_BAT,'temperature'],
-    'BatteryGrade': ['battery_grade', '%', 'gradeBattery', SENSOR_TYPE_BAT,'battery'],
-    'CurrentSpeed': ['current_speed',  'km/h', 'nowSpeed', SENSOR_TYPE_MOTO,'none'],
-    'ScooterConnected': ['scooter_connected', '', 'isConnected', SENSOR_TYPE_MOTO,'connectivity'],
-    'IsCharging': ['is_charging', '', 'isCharging', SENSOR_TYPE_MOTO,'power'],
-    'IsLocked': ['is_locked', '', 'lockStatus', SENSOR_TYPE_MOTO,'lock'],
-    'TimeLeft': ['time_left',  '','leftTime', SENSOR_TYPE_MOTO,'none'],
-    'EstimatedMileage': ['estimated_mileage', 'km', 'estimatedMileage', SENSOR_TYPE_MOTO,'none'],
-    'centreCtrlBatt': ['centre_ctrl_batt', '', 'centreCtrlBattery', SENSOR_TYPE_MOTO,'none'],
-    'HDOP': ['hdp',  '', 'hdop', SENSOR_TYPE_MOTO,'none'],
-    'Distance': ['distance', 'km', 'distance', SENSOR_TYPE_DIST,'none'],
-    'RidingTime': ['riding_time', '','ridingTime', SENSOR_TYPE_DIST,'none'],
-    'totalMileage': ['total_mileage', 'km', 'totalMileage', SENSOR_TYPE_OVERALL,'none'],
-    'DaysInUse': ['bind_days_count', 'days', 'bindDaysCount', SENSOR_TYPE_OVERALL,'none'],
+    'BatteryCharge': ['battery_charge', '%', 'batteryCharging', SENSOR_TYPE_BAT,'battery', 'mdi:battery-charging-50'],
+    'Isconnected': ['is_connected', '', 'isConnected', SENSOR_TYPE_BAT,'connectivity','mdi:connection'],
+    'TimesCharged': ['times_charged', 'x', 'chargedTimes', SENSOR_TYPE_BAT,'none','mdi:battery-charging-wireless'],
+    'temperatureDesc': ['temp_descr', '', 'temperatureDesc', SENSOR_TYPE_BAT,'none','mdi:thermometer-alert'],
+    'Temperature': ['temperature', '°C', 'temperature', SENSOR_TYPE_BAT,'temperature','mdi:thermometer'],
+    'BatteryGrade': ['battery_grade', '%', 'gradeBattery', SENSOR_TYPE_BAT,'battery','mdi:car-battery'],
+    'CurrentSpeed': ['current_speed',  'km/h', 'nowSpeed', SENSOR_TYPE_MOTO,'none','mdi:speedometer'],
+    'ScooterConnected': ['scooter_connected', '', 'isConnected', SENSOR_TYPE_MOTO,'connectivity','mdi:motorbike-electric'],
+    'IsCharging': ['is_charging', '', 'isCharging', SENSOR_TYPE_MOTO,'power','mdi:battery-charging'],
+    'IsLocked': ['is_locked', '', 'lockStatus', SENSOR_TYPE_MOTO,'lock','mdi:lock'],
+    'TimeLeft': ['time_left',  '','leftTime', SENSOR_TYPE_MOTO,'none','mdi:av-timer'],
+    'EstimatedMileage': ['estimated_mileage', 'km', 'estimatedMileage', SENSOR_TYPE_MOTO,'none','mdi:map-marker-distance'],
+    'centreCtrlBatt': ['centre_ctrl_batt', '', 'centreCtrlBattery', SENSOR_TYPE_MOTO,'none','mdi:car-cruise-control'],
+    'HDOP': ['hdp',  '', 'hdop', SENSOR_TYPE_MOTO,'none','mdi:map-marker'],
+    'Distance': ['distance', 'km', 'distance', SENSOR_TYPE_DIST,'none','mdi:map-marker-distance'],
+    'RidingTime': ['riding_time', '','ridingTime', SENSOR_TYPE_DIST,'none','mdi:map-clock'],
+    'totalMileage': ['total_mileage', 'km', 'totalMileage', SENSOR_TYPE_OVERALL,'none','mdi:map-marker-distance'],
+    'DaysInUse': ['bind_days_count', 'days', 'bindDaysCount', SENSOR_TYPE_OVERALL,'none','mdi:calendar-today'],
 }
 
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
-    
+
     #get config variables
     email = config.get(CONF_EMAIL)
     password = config.get(CONF_PASSWORD)
@@ -177,26 +177,24 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     token = get_token(email, password, country)
     sn = get_vehicles_info(token)['data'][id_scooter]['sn']
     sensor_prefix = get_vehicles_info(token)['data'][id_scooter]['name']
-    sensor_prefix = sensor_prefix.replace(" ", "_")
-    sensor_prefix = sensor_prefix.lower()
-    sensor_prefix = sensor_prefix.replace("’", "")
+
     sensors = config.get(CONF_MONITORED_VARIABLES)
-    
+
     #init data class
-    data_bridge = NuiDataBridge(sn,token)
+    data_bridge = NiuDataBridge(sn,token)
     data_bridge.updateBat()
     data_bridge.updateMoto()
     data_bridge.updateMotoInfo()
 
     #add sensors
-    devices = []   
+    devices = []
     for sensor in sensors:
         sensor_config = SENSOR_TYPES[sensor]
-        devices.append(NuiSensor(data_bridge, sensor, sensor_config[0], sensor_config[1], sensor_config[2],sensor_config[3], sensor_prefix, sensor_config[4] ))
+        devices.append(NiuSensor(data_bridge, sensor, sensor_config[0], sensor_config[1], sensor_config[2],sensor_config[3], sensor_prefix, sensor_config[4], sn, sensor_config[5] ))
     add_devices(devices)
 
 
-class NuiDataBridge(object):
+class NiuDataBridge(object):
 
     def __init__(self, sn, token):
 
@@ -205,7 +203,7 @@ class NuiDataBridge(object):
         self._dataMotoInfo = None
         self._sn = sn
         self._token = token
-     
+
     def dataBat(self, id_field):
         return self._dataBat['data']['batteries']['compartmentA'][id_field]
 
@@ -221,7 +219,7 @@ class NuiDataBridge(object):
     def dataOverall(self, id_field):
         return self._dataMotoInfo['data'][id_field]
 
-  
+
     @Throttle(timedelta(seconds=1))
     def updateBat(self):
         self._dataBat = get_info(BATINFO_BASE_URL,self._sn,self._token)
@@ -234,17 +232,19 @@ class NuiDataBridge(object):
     def updateMotoInfo(self):
         self._dataMotoInfo = post_info(MOTOINFO_BASE_URL, self._sn,self._token)
 
-class NuiSensor(Entity):
+class NiuSensor(Entity):
 
-    def __init__(self, data_bridge, name,  sensor_id, uom, id_name,sensor_grp, sensor_prefix, device_class):
-        self._name = 'NIU Scooter ' + sensor_prefix + ' ' + name
+    def __init__(self, data_bridge, name,  sensor_id, uom, id_name,sensor_grp, sensor_prefix, device_class, sn, icon):
+        self._unique_id = 'sensor.niu_scooter_'+ sn + '_' + sensor_id
+        self._name = 'NIU Scooter ' + sensor_prefix    + ' ' + name # Scooter name as sensor prefix
         self._uom = uom
         self._data_bridge = data_bridge
-        self._entity_id = 'sensor.niu_scooter_'+ sensor_prefix + '_' + sensor_id
         self._device_class = device_class
         self._id_name = id_name  #info field for parsing the URL
         self._sensor_grp = sensor_grp #info field for choosing the right URL
-    
+        self._icon = icon
+
+
     #first init
         if self._sensor_grp == SENSOR_TYPE_BAT:
             self._state = self._data_bridge.dataBat(self._id_name)
@@ -257,6 +257,9 @@ class NuiSensor(Entity):
         elif self._sensor_grp == SENSOR_TYPE_OVERALL:
             self._state = self._data_bridge.dataOverall(self._id_name)
 
+    @property
+    def unique_id(self):
+        return self._unique_id
 
     @property
     def name(self):
@@ -265,11 +268,11 @@ class NuiSensor(Entity):
     @property
     def unit_of_measurement(self):
         return self._uom
-     
+
     @property
-    def entity_id(self):
-        return self._entity_id
- 
+    def icon(self):
+        return self._icon
+
     @property
     def state(self):
         return self._state
@@ -308,6 +311,3 @@ class NuiSensor(Entity):
         elif self._sensor_grp == SENSOR_TYPE_OVERALL:
             self._data_bridge.updateMotoInfo()
             self._state = self._data_bridge.dataOverall(self._id_name)
-           
- 
-

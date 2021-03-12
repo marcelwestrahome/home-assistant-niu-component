@@ -1,1 +1,1 @@
-"""nui component."""
+"""niu component."""
