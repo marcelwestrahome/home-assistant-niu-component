@@ -215,7 +215,6 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     sn = get_vehicles_info(api_uri,token)['data'][id_scooter]['sn']
     sensor_prefix = get_vehicles_info(api_uri,token)['data'][id_scooter]['name']
 
-
     sensors = config.get(CONF_MONITORED_VARIABLES)
 
     #init data class
