@@ -162,7 +162,9 @@ CONFIG_SCHEMA = vol.Schema({
                                                           'LastTrackStartTime'
                                                           'LastTrackEndTime',
                                                           'LastTrackDistance',
-                                                          'LastTrackAverageSpeed'
+                                                          'LastTrackAverageSpeed',
+                                                          'LastTrackMapThumb'
+
                                                            ])])
     })
 }, extra=vol.ALLOW_EXTRA)
@@ -192,7 +194,8 @@ SENSOR_TYPES = {
     'LastTrackEndTime': ['last_track_end_time', '', 'endTime', SENSOR_TYPE_TRACK,'none','mdi:clock-end'],
     'LastTrackDistance': ['last_track_distance', 'km', 'distance', SENSOR_TYPE_TRACK,'none','mdi:map-marker-distance'],
     'LastTrackAverageSpeed': ['last_track_average_speed', 'km/h', 'avespeed', SENSOR_TYPE_TRACK,'none','mdi:speedometer'],
-    'LastTrackRidingtime': ['last_track_riding_time', '', 'ridingtime', SENSOR_TYPE_TRACK,'none','mdi:timelapse']
+    'LastTrackRidingtime': ['last_track_riding_time', '', 'ridingtime', SENSOR_TYPE_TRACK,'none','mdi:timelapse'],
+    'LastTrackThumb': ['last_track_thumb', '', 'track_thumb', SENSOR_TYPE_TRACK,'none','mdi:map']
 
 #   'Config' : [sensor_id, uom, id_name, sensor_grp, device_class, icon]
 }
@@ -263,6 +266,9 @@ class NiuDataBridge(object):
             return datetime.fromtimestamp((self._dataTrackInfo['data'][0][id_field])/1000).strftime("%Y-%m-%d %H:%M:%S")
         if id_field == 'ridingtime':
             return strftime("%H:%M:%S", gmtime(self._dataTrackInfo['data'][0][id_field]))
+        if id_field == 'track_thumb':
+            thumburl = self._dataTrackInfo['data'][0][id_field].replace("app-api.niucache.com", "app-api-fk.niu.com")
+            return thumburl.replace("/track/thumb/","/track/overseas/thumb/")
         return self._dataTrackInfo['data'][0][id_field]
 
 
