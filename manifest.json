@@ -4,5 +4,6 @@
   "documentation": "https://github.com/mwestra",
   "dependencies": [],
   "codeowners": ["@mwestra"],
-  "requirements": []
+  "requirements": [],
+  "version": "0.0.1"
 }
