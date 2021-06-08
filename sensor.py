@@ -192,7 +192,7 @@ SENSOR_TYPES = {
     'DaysInUse': ['bind_days_count', 'days', 'bindDaysCount', SENSOR_TYPE_OVERALL,'none','mdi:calendar-today'],
     'LastTrackStartTime': ['last_track_start_time', '', 'startTime', SENSOR_TYPE_TRACK,'none','mdi:clock-start'],
     'LastTrackEndTime': ['last_track_end_time', '', 'endTime', SENSOR_TYPE_TRACK,'none','mdi:clock-end'],
-    'LastTrackDistance': ['last_track_distance', 'km', 'distance', SENSOR_TYPE_TRACK,'none','mdi:map-marker-distance'],
+    'LastTrackDistance': ['last_track_distance', 'm', 'distance', SENSOR_TYPE_TRACK,'none','mdi:map-marker-distance'],
     'LastTrackAverageSpeed': ['last_track_average_speed', 'km/h', 'avespeed', SENSOR_TYPE_TRACK,'none','mdi:speedometer'],
     'LastTrackRidingtime': ['last_track_riding_time', '', 'ridingtime', SENSOR_TYPE_TRACK,'none','mdi:timelapse'],
     'LastTrackThumb': ['last_track_thumb', '', 'track_thumb', SENSOR_TYPE_TRACK,'none','mdi:map']
