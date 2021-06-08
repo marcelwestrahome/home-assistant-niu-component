@@ -3,15 +3,15 @@
 @ Date        : 21/03/2020
 @ Description : Niu Sensor - Monitor Niu Scooters.
 """
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 import json
 import logging
 import requests
 from urllib.request import urlopen
-from datetime import timedelta
+from datetime import timedelta, datetime
 from time import gmtime, strftime
-import datetime
+#import datetime
 
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
@@ -23,17 +23,19 @@ from homeassistant.util import Throttle
 #******************************************************************************************
 # start to add to include file
 
-API_BASE_URL = 'https://app-api-fk.niu.com'
 ACCOUNT_BASE_URL = 'https://account-fk.niu.com'
-BATINFO_BASE_URL = '/v3/motor_data/battery_info'
-MOTOINDEX_BASE_URL = '/v3/motor_data/index_info'
-MOTO_LIST_URL = '/motoinfo/list'
-MOTOINFO_BASE_URL = '/motoinfo/overallTally'
-FIRMWARE_BAS_URL = '/motorota/getfirmwareversion'
+LOGIN_URI = '/appv2/login'
+API_BASE_URL = 'https://app-api-fk.niu.com'
+MOTOR_BATTERY_API_URI = '/v3/motor_data/battery_info'
+MOTOR_INDEX_API_URI = '/v3/motor_data/index_info'
+MOTOINFO_LIST_API_URI = '/motoinfo/list'
+MOTOINFO_ALL_API_URI = '/motoinfo/overallTally'
+TRACK_LIST_API_URI = '/v5/track/list/v2'
+#FIRMWARE_BAS_URL = '/motorota/getfirmwareversion'
 
 
 def get_token(email, password, cc):
-    url = ACCOUNT_BASE_URL + '/appv2/login'
+    url = ACCOUNT_BASE_URL + LOGIN_URI
     data = {'account': email, 'countryCode': cc, 'password': password}
     try:
         r = requests.post(url, data=data)
@@ -44,9 +46,9 @@ def get_token(email, password, cc):
     return data['data']['token']
 
 
-def get_vehicles_info(token):
+def get_vehicles_info(path,token):
 
-    url = API_BASE_URL + '/motoinfo/list'
+    url = API_BASE_URL + path
     headers = {'token': token, 'Accept-Language': 'en-US'}
     try:
         r = requests.post(url, headers=headers, data=[])
@@ -56,8 +58,6 @@ def get_vehicles_info(token):
         return False
     data = json.loads(r.content.decode())
     return data
-
-
 
 def get_info(path, sn, token):
     url = API_BASE_URL + path
@@ -92,6 +92,23 @@ def post_info(path, sn, token):
         return False
     return data
 
+def post_info_track(path, sn, token):
+    url = API_BASE_URL + path
+    params = {}
+    headers = {'token': token, 'Accept-Language': 'en-US', 'User-Agent': 'manager/1.0.0 (identifier);clientIdentifier=identifier' }
+    try:
+        r = requests.post(url, headers=headers, params=params, data={'index': '0','pagesize': 10,'sn': sn})
+    except ConnectionError as e:
+        return False
+    if r.status_code != 200:
+        return False
+    data = json.loads(r.content.decode())
+    if data['status'] != 0:
+        return False
+    return data
+
+
+
 # end to add to include file
 #*****************************************************************
 
@@ -107,7 +124,8 @@ SENSOR_TYPE_MOTO = 'MOTO'
 SENSOR_TYPE_DIST = 'DIST'
 SENSOR_TYPE_OVERALL = 'TOTAL'
 SENSOR_TYPE_POS = 'POSITION'
-SENSOR_TYPE_SYSTEM = 'SYSTEM'
+#SENSOR_TYPE_SYSTEM = 'SYSTEM'
+SENSOR_TYPE_TRACK = 'TRACK'
 
 #MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=60)
 
@@ -135,10 +153,19 @@ CONFIG_SCHEMA = vol.Schema({
                                                           'EstimatedMileage',
                                                           'centreCtrlBatt',
                                                           'HDOP',
+                                                          'Longitude'
+                                                          'Latitude'
                                                           'Distance',
                                                           'RidingTime',
                                                           'totalMileage',
-                                                          'DaysInUse' ])])
+                                                          'DaysInUse',
+                                                          'LastTrackStartTime'
+                                                          'LastTrackEndTime',
+                                                          'LastTrackDistance',
+                                                          'LastTrackAverageSpeed',
+                                                          'LastTrackMapThumb'
+
+                                                           ])])
     })
 }, extra=vol.ALLOW_EXTRA)
 
@@ -157,11 +184,23 @@ SENSOR_TYPES = {
     'EstimatedMileage': ['estimated_mileage', 'km', 'estimatedMileage', SENSOR_TYPE_MOTO,'none','mdi:map-marker-distance'],
     'centreCtrlBatt': ['centre_ctrl_batt', '', 'centreCtrlBattery', SENSOR_TYPE_MOTO,'none','mdi:car-cruise-control'],
     'HDOP': ['hdp',  '', 'hdop', SENSOR_TYPE_MOTO,'none','mdi:map-marker'],
+    'Longitude': ['long',  '', 'lng', SENSOR_TYPE_POS,'none','mdi:map-marker'],
+    'Latitude': ['lat',  '', 'lat', SENSOR_TYPE_POS,'none','mdi:map-marker'],
     'Distance': ['distance', 'km', 'distance', SENSOR_TYPE_DIST,'none','mdi:map-marker-distance'],
     'RidingTime': ['riding_time', '','ridingTime', SENSOR_TYPE_DIST,'none','mdi:map-clock'],
     'totalMileage': ['total_mileage', 'km', 'totalMileage', SENSOR_TYPE_OVERALL,'none','mdi:map-marker-distance'],
     'DaysInUse': ['bind_days_count', 'days', 'bindDaysCount', SENSOR_TYPE_OVERALL,'none','mdi:calendar-today'],
+    'LastTrackStartTime': ['last_track_start_time', '', 'startTime', SENSOR_TYPE_TRACK,'none','mdi:clock-start'],
+    'LastTrackEndTime': ['last_track_end_time', '', 'endTime', SENSOR_TYPE_TRACK,'none','mdi:clock-end'],
+    'LastTrackDistance': ['last_track_distance', 'm', 'distance', SENSOR_TYPE_TRACK,'none','mdi:map-marker-distance'],
+    'LastTrackAverageSpeed': ['last_track_average_speed', 'km/h', 'avespeed', SENSOR_TYPE_TRACK,'none','mdi:speedometer'],
+    'LastTrackRidingtime': ['last_track_riding_time', '', 'ridingtime', SENSOR_TYPE_TRACK,'none','mdi:timelapse'],
+    'LastTrackThumb': ['last_track_thumb', '', 'track_thumb', SENSOR_TYPE_TRACK,'none','mdi:map']
+
+#   'Config' : [sensor_id, uom, id_name, sensor_grp, device_class, icon]
 }
+# NiuSensor(data_bridge, sensor, sensor_config[0], sensor_config[1], sensor_config[2],sensor_config[3], sensor_prefix, sensor_config[4], sn, sensor_config[5] ))
+# NiuSensor(data_bridge, name,  sensor_id, uom, id_name,sensor_grp, sensor_prefix, device_class, sn, icon)
 
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
@@ -171,12 +210,13 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     password = config.get(CONF_PASSWORD)
     country = config.get(CONF_COUNTRY)
     id_scooter = int(config.get(CONF_ID))
+    api_uri = MOTOINFO_LIST_API_URI
     #sensor_prefix = config.get(CONF_NAME)
 
     #get token and unique scooter sn
     token = get_token(email, password, country)
-    sn = get_vehicles_info(token)['data'][id_scooter]['sn']
-    sensor_prefix = get_vehicles_info(token)['data'][id_scooter]['name']
+    sn = get_vehicles_info(api_uri,token)['data'][id_scooter]['sn']
+    sensor_prefix = get_vehicles_info(api_uri,token)['data'][id_scooter]['name']
 
     sensors = config.get(CONF_MONITORED_VARIABLES)
 
@@ -185,6 +225,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     data_bridge.updateBat()
     data_bridge.updateMoto()
     data_bridge.updateMotoInfo()
+    data_bridge.updateTrackInfo()
 
     #add sensors
     devices = []
@@ -201,6 +242,7 @@ class NiuDataBridge(object):
         self._dataBat = None
         self._dataMoto = None
         self._dataMotoInfo = None
+        self._dataTrackInfo = None
         self._sn = sn
         self._token = token
 
@@ -219,18 +261,33 @@ class NiuDataBridge(object):
     def dataOverall(self, id_field):
         return self._dataMotoInfo['data'][id_field]
 
+    def dataTrack(self, id_field):
+        if id_field == 'startTime' or id_field == 'endTime':
+            return datetime.fromtimestamp((self._dataTrackInfo['data'][0][id_field])/1000).strftime("%Y-%m-%d %H:%M:%S")
+        if id_field == 'ridingtime':
+            return strftime("%H:%M:%S", gmtime(self._dataTrackInfo['data'][0][id_field]))
+        if id_field == 'track_thumb':
+            thumburl = self._dataTrackInfo['data'][0][id_field].replace("app-api.niucache.com", "app-api-fk.niu.com")
+            return thumburl.replace("/track/thumb/","/track/overseas/thumb/")
+        return self._dataTrackInfo['data'][0][id_field]
+
 
     @Throttle(timedelta(seconds=1))
     def updateBat(self):
-        self._dataBat = get_info(BATINFO_BASE_URL,self._sn,self._token)
+        self._dataBat = get_info(MOTOR_BATTERY_API_URI,self._sn,self._token)
 
     @Throttle(timedelta(seconds=1))
     def updateMoto(self):
-        self._dataMoto = get_info(MOTOINDEX_BASE_URL, self._sn,self._token)
+        self._dataMoto = get_info(MOTOR_INDEX_API_URI, self._sn,self._token)
 
     @Throttle(timedelta(seconds=1))
     def updateMotoInfo(self):
-        self._dataMotoInfo = post_info(MOTOINFO_BASE_URL, self._sn,self._token)
+        self._dataMotoInfo = post_info(MOTOINFO_ALL_API_URI, self._sn,self._token)
+
+    @Throttle(timedelta(seconds=1))
+    def updateTrackInfo(self):
+        self._dataTrackInfo = post_info_track(TRACK_LIST_API_URI, self._sn,self._token)
+
 
 class NiuSensor(Entity):
 
@@ -256,6 +313,8 @@ class NiuSensor(Entity):
             self._state = self._data_bridge.dataDist(self._id_name)
         elif self._sensor_grp == SENSOR_TYPE_OVERALL:
             self._state = self._data_bridge.dataOverall(self._id_name)
+        elif self._sensor_grp == SENSOR_TYPE_TRACK:
+            self._state = self._data_bridge.dataTrack(self._id_name)
 
     @property
     def unique_id(self):
@@ -282,8 +341,8 @@ class NiuSensor(Entity):
         return self._device_class
 
     @property
-    def state_attributes(self):
-        if  self._sensor_grp == SENSOR_TYPE_MOTO and self._id_name =='isConnected':
+    def extra_state_attributes(self):
+       if  self._sensor_grp == SENSOR_TYPE_MOTO and self._id_name =='isConnected':
             return {'bmsId' : self._data_bridge.dataBat('bmsId'),
                     'latitude' : self._data_bridge.dataPos('lat'),
                     'longitude': self._data_bridge.dataPos('lng'),
@@ -311,3 +370,6 @@ class NiuSensor(Entity):
         elif self._sensor_grp == SENSOR_TYPE_OVERALL:
             self._data_bridge.updateMotoInfo()
             self._state = self._data_bridge.dataOverall(self._id_name)
+        elif self._sensor_grp == SENSOR_TYPE_TRACK:
+            self._data_bridge.updateTrackInfo()
+            self._state = self._data_bridge.dataTrack(self._id_name)
