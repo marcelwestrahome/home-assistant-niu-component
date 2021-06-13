@@ -187,7 +187,7 @@ SENSOR_TYPES = {
     'Longitude': ['long',  '', 'lng', SENSOR_TYPE_POS,'none','mdi:map-marker'],
     'Latitude': ['lat',  '', 'lat', SENSOR_TYPE_POS,'none','mdi:map-marker'],
     'Distance': ['distance', 'm', 'distance', SENSOR_TYPE_DIST,'none','mdi:map-marker-distance'],
-    'RidingTime': ['riding_time', '','ridingTime', SENSOR_TYPE_DIST,'none','mdi:map-clock'],
+    'RidingTime': ['riding_time', 's','ridingTime', SENSOR_TYPE_DIST,'none','mdi:map-clock'],
     'totalMileage': ['total_mileage', 'km', 'totalMileage', SENSOR_TYPE_OVERALL,'none','mdi:map-marker-distance'],
     'DaysInUse': ['bind_days_count', 'days', 'bindDaysCount', SENSOR_TYPE_OVERALL,'none','mdi:calendar-today'],
     'LastTrackStartTime': ['last_track_start_time', '', 'startTime', SENSOR_TYPE_TRACK,'none','mdi:clock-start'],
