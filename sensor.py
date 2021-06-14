@@ -180,7 +180,7 @@ SENSOR_TYPES = {
     'ScooterConnected': ['scooter_connected', '', 'isConnected', SENSOR_TYPE_MOTO,'connectivity','mdi:motorbike-electric'],
     'IsCharging': ['is_charging', '', 'isCharging', SENSOR_TYPE_MOTO,'power','mdi:battery-charging'],
     'IsLocked': ['is_locked', '', 'lockStatus', SENSOR_TYPE_MOTO,'lock','mdi:lock'],
-    'TimeLeft': ['time_left',  '','leftTime', SENSOR_TYPE_MOTO,'none','mdi:av-timer'],
+    'TimeLeft': ['time_left',  'h','leftTime', SENSOR_TYPE_MOTO,'none','mdi:av-timer'],
     'EstimatedMileage': ['estimated_mileage', 'km', 'estimatedMileage', SENSOR_TYPE_MOTO,'none','mdi:map-marker-distance'],
     'centreCtrlBatt': ['centre_ctrl_batt', '', 'centreCtrlBattery', SENSOR_TYPE_MOTO,'none','mdi:car-cruise-control'],
     'HDOP': ['hdp',  '', 'hdop', SENSOR_TYPE_MOTO,'none','mdi:map-marker'],
