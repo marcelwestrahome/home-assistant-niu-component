@@ -367,6 +367,7 @@ SENSOR_TYPES = {
         "mdi:map",
     ]
     #   'Config' : [sensor_id, uom, id_name, sensor_grp, device_class, icon]
+
 }
 # NiuSensor(data_bridge, sensor, sensor_config[0], sensor_config[1], sensor_config[2],sensor_config[3], sensor_prefix, sensor_config[4], sn, sensor_config[5] ))
 # NiuSensor(data_bridge, name,  sensor_id, uom, id_name,sensor_grp, sensor_prefix, device_class, sn, icon)
