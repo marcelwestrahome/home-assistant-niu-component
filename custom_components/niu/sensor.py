@@ -1,28 +1,18 @@
-"""
-@ Author      : Marcel Westra
-@ Date        : 21/03/2020
-@ Description : Niu Sensor - Monitor Niu Scooters.
-"""
-VERSION = "0.0.2"
-
+"""Support for Niu Scooters by Marcel Westra."""
+from datetime import datetime, timedelta
 import json
 import logging
-import requests
-from urllib.request import urlopen
-from datetime import timedelta, datetime
 from time import gmtime, strftime
 
-# import datetime
-
+import requests
 import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
+
 from homeassistant.const import CONF_MONITORED_VARIABLES
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
 
-
-# ******************************************************************************************
-# start to add to include file
+VERSION = "0.0.2"
 
 ACCOUNT_BASE_URL = "https://account-fk.niu.com"
 LOGIN_URI = "/appv2/login"
@@ -33,96 +23,6 @@ MOTOINFO_LIST_API_URI = "/motoinfo/list"
 MOTOINFO_ALL_API_URI = "/motoinfo/overallTally"
 TRACK_LIST_API_URI = "/v5/track/list/v2"
 # FIRMWARE_BAS_URL = '/motorota/getfirmwareversion'
-
-
-def get_token(email, password, cc):
-    url = ACCOUNT_BASE_URL + LOGIN_URI
-    data = {"account": email, "countryCode": cc, "password": password}
-    try:
-        r = requests.post(url, data=data)
-    except BaseException as e:
-        print(e)
-        return False
-    data = json.loads(r.content.decode())
-    return data["data"]["token"]
-
-
-def get_vehicles_info(path, token):
-
-    url = API_BASE_URL + path
-    headers = {"token": token, "Accept-Language": "en-US"}
-    try:
-        r = requests.post(url, headers=headers, data=[])
-    except ConnectionError as e:
-        return False
-    if r.status_code != 200:
-        return False
-    data = json.loads(r.content.decode())
-    return data
-
-
-def get_info(path, sn, token):
-    url = API_BASE_URL + path
-
-    params = {"sn": sn}
-    headers = {"token": token, "Accept-Language": "en-US"}
-    try:
-
-        r = requests.get(url, headers=headers, params=params)
-
-    except ConnectionError as e:
-        return False
-    if r.status_code != 200:
-        return False
-    data = json.loads(r.content.decode())
-    if data["status"] != 0:
-        return False
-    return data
-
-
-def post_info(path, sn, token):
-    url = API_BASE_URL + path
-    params = {}
-    headers = {"token": token, "Accept-Language": "en-US"}
-    try:
-        r = requests.post(url, headers=headers, params=params, data={"sn": sn})
-    except ConnectionError as e:
-        return False
-    if r.status_code != 200:
-        return False
-    data = json.loads(r.content.decode())
-    if data["status"] != 0:
-        return False
-    return data
-
-
-def post_info_track(path, sn, token):
-    url = API_BASE_URL + path
-    params = {}
-    headers = {
-        "token": token,
-        "Accept-Language": "en-US",
-        "User-Agent": "manager/1.0.0 (identifier);clientIdentifier=identifier",
-    }
-    try:
-        r = requests.post(
-            url,
-            headers=headers,
-            params=params,
-            data={"index": "0", "pagesize": 10, "sn": sn},
-        )
-    except ConnectionError as e:
-        return False
-    if r.status_code != 200:
-        return False
-    data = json.loads(r.content.decode())
-    if data["status"] != 0:
-        return False
-    return data
-
-
-# end to add to include file
-# *****************************************************************
 
 DOMAIN = "niu"
 CONF_EMAIL = "email"
@@ -367,10 +267,95 @@ SENSOR_TYPES = {
         "mdi:map",
     ]
     #   'Config' : [sensor_id, uom, id_name, sensor_grp, device_class, icon]
-
 }
 # NiuSensor(data_bridge, sensor, sensor_config[0], sensor_config[1], sensor_config[2],sensor_config[3], sensor_prefix, sensor_config[4], sn, sensor_config[5] ))
 # NiuSensor(data_bridge, name,  sensor_id, uom, id_name,sensor_grp, sensor_prefix, device_class, sn, icon)
+
+
+def get_token(email, password, cc):
+    url = ACCOUNT_BASE_URL + LOGIN_URI
+    data = {"account": email, "countryCode": cc, "password": password}
+    try:
+        r = requests.post(url, data=data)
+    except BaseException as e:
+        print(e)
+        return False
+    data = json.loads(r.content.decode())
+    return data["data"]["token"]
+
+
+def get_vehicles_info(path, token):
+
+    url = API_BASE_URL + path
+    headers = {"token": token, "Accept-Language": "en-US"}
+    try:
+        r = requests.post(url, headers=headers, data=[])
+    except ConnectionError:
+        return False
+    if r.status_code != 200:
+        return False
+    data = json.loads(r.content.decode())
+    return data
+
+
+def get_info(path, sn, token):
+    url = API_BASE_URL + path
+
+    params = {"sn": sn}
+    headers = {"token": token, "Accept-Language": "en-US"}
+    try:
+
+        r = requests.get(url, headers=headers, params=params)
+
+    except ConnectionError:
+        return False
+    if r.status_code != 200:
+        return False
+    data = json.loads(r.content.decode())
+    if data["status"] != 0:
+        return False
+    return data
+
+
+def post_info(path, sn, token):
+    url = API_BASE_URL + path
+    params = {}
+    headers = {"token": token, "Accept-Language": "en-US"}
+    try:
+        r = requests.post(url, headers=headers, params=params, data={"sn": sn})
+    except ConnectionError:
+        return False
+    if r.status_code != 200:
+        return False
+    data = json.loads(r.content.decode())
+    if data["status"] != 0:
+        return False
+    return data
+
+
+def post_info_track(path, sn, token):
+    url = API_BASE_URL + path
+    params = {}
+    headers = {
+        "token": token,
+        "Accept-Language": "en-US",
+        "User-Agent": "manager/1.0.0 (identifier);clientIdentifier=identifier",
+    }
+    try:
+        r = requests.post(
+            url,
+            headers=headers,
+            params=params,
+            data={"index": "0", "pagesize": 10, "sn": sn},
+        )
+    except ConnectionError:
+        return False
+    if r.status_code != 200:
+        return False
+    data = json.loads(r.content.decode())
+    if data["status"] != 0:
+        return False
+    return data
 
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
