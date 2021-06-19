@@ -1,9 +1,0 @@
-{
-  "domain": "niu",
-  "name": "Nui Scooters",
-  "documentation": "https://github.com/mwestra",
-  "dependencies": [],
-  "codeowners": ["@mwestra"],
-  "requirements": [],
-  "version": "0.0.1"
-}
