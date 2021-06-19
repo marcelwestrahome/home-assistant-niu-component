@@ -166,7 +166,14 @@ SENSOR_TYPES = {
         "mdi:battery-charging",
     ],
     "IsLocked": ["is_locked", "", "lockStatus", SENSOR_TYPE_MOTO, "lock", "mdi:lock"],
-    "TimeLeft": ["time_left", "", "leftTime", SENSOR_TYPE_MOTO, "none", "mdi:av-timer"],
+    "TimeLeft": [
+        "time_left",
+        "h",
+        "leftTime",
+        SENSOR_TYPE_MOTO,
+        "none",
+        "mdi:av-timer",
+    ],
     "EstimatedMileage": [
         "estimated_mileage",
         "km",
@@ -177,10 +184,10 @@ SENSOR_TYPES = {
     ],
     "centreCtrlBatt": [
         "centre_ctrl_batt",
-        "",
+        "%",
         "centreCtrlBattery",
         SENSOR_TYPE_MOTO,
-        "none",
+        "battery",
         "mdi:car-cruise-control",
     ],
     "HDOP": ["hdp", "", "hdop", SENSOR_TYPE_MOTO, "none", "mdi:map-marker"],
@@ -188,7 +195,7 @@ SENSOR_TYPES = {
     "Latitude": ["lat", "", "lat", SENSOR_TYPE_POS, "none", "mdi:map-marker"],
     "Distance": [
         "distance",
-        "km",
+        "m",
         "distance",
         SENSOR_TYPE_DIST,
         "none",
@@ -196,7 +203,7 @@ SENSOR_TYPES = {
     ],
     "RidingTime": [
         "riding_time",
-        "",
+        "s",
         "ridingTime",
         SENSOR_TYPE_DIST,
         "none",
