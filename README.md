@@ -13,7 +13,7 @@ You can install this custom component by adding this repository ([https://github
 
 sensor:
   - platform: niu
-    email: user@example.com
+    username: user@example.com
     password: mysecretpassword
     country: 49
     scooter_id: '0'
