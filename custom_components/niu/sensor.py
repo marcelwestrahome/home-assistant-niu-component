@@ -7,6 +7,7 @@ from time import gmtime, strftime
 import requests
 import voluptuous as vol
 
+from homeassistant.components.sensor import PLATFORM_SCHEMA
 from homeassistant.const import CONF_MONITORED_VARIABLES
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
@@ -42,54 +43,49 @@ SENSOR_TYPE_TRACK = "TRACK"
 
 _LOGGER = logging.getLogger(__name__)
 
-CONFIG_SCHEMA = vol.Schema(
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        DOMAIN: vol.Schema(
-            {
-                vol.Required(CONF_USERNAME): cv.string,
-                vol.Required(CONF_PASSWORD): cv.string,
-                vol.Required(CONF_COUNTRY): cv.positive_int,
-                vol.Optional(
-                    CONF_SCOOTER_ID, default=DEFAULT_SCOOTER_ID
-                ): cv.positive_int,
-                vol.Optional(
-                    CONF_MONITORED_VARIABLES, default=["BatteryCharge"]
-                ): vol.All(
-                    cv.ensure_list,
-                    vol.Length(min=1),
+        vol.Required(CONF_USERNAME): cv.string,
+        vol.Required(CONF_PASSWORD): cv.string,
+        vol.Required(CONF_COUNTRY): cv.positive_int,
+        vol.Optional(CONF_SCOOTER_ID, default=DEFAULT_SCOOTER_ID): cv.positive_int,
+        vol.Optional(CONF_MONITORED_VARIABLES, default=["BatteryCharge"]): vol.All(
+            cv.ensure_list,
+            vol.Length(min=1),
+            [
+                vol.In(
                     [
-                        vol.In(
-                            [
-                                "BatteryCharge",
-                                "Isconnected",
-                                "TimesCharged",
-                                "temperatureDesc",
-                                "Temperature",
-                                "BatteryGrade",
-                                "CurrentSpeed",
-                                "ScooterConnected",
-                                "IsCharging",
-                                "IsLocked",
-                                "TimeLeft",
-                                "EstimatedMileage",
-                                "centreCtrlBatt",
-                                "HDOP",
-                                "Longitude" "Latitude" "Distance",
-                                "RidingTime",
-                                "totalMileage",
-                                "DaysInUse",
-                                "LastTrackStartTime" "LastTrackEndTime",
-                                "LastTrackDistance",
-                                "LastTrackAverageSpeed",
-                                "LastTrackMapThumb",
-                            ]
-                        )
-                    ],
-                ),
-            }
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
+                        "BatteryCharge",
+                        "Isconnected",
+                        "TimesCharged",
+                        "temperatureDesc",
+                        "Temperature",
+                        "BatteryGrade",
+                        "CurrentSpeed",
+                        "ScooterConnected",
+                        "IsCharging",
+                        "IsLocked",
+                        "TimeLeft",
+                        "EstimatedMileage",
+                        "centreCtrlBatt",
+                        "HDOP",
+                        "Longitude",
+                        "Latitude",
+                        "Distance",
+                        "RidingTime",
+                        "totalMileage",
+                        "DaysInUse",
+                        "LastTrackStartTime",
+                        "LastTrackEndTime",
+                        "LastTrackDistance",
+                        "LastTrackAverageSpeed",
+                        "LastTrackRidingtime",
+                        "LastTrackThumb",
+                    ]
+                )
+            ],
+        ),
+    }
 )
 
 SENSOR_TYPES = {
@@ -371,7 +367,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     username = config.get(CONF_USERNAME)
     password = config.get(CONF_PASSWORD)
     country = config.get(CONF_COUNTRY)
-    scooter_id = int(config.get(CONF_SCOOTER_ID))
+    scooter_id = config.get(CONF_SCOOTER_ID)
     api_uri = MOTOINFO_LIST_API_URI
 
     # get token and unique scooter sn
