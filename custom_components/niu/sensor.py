@@ -48,7 +48,7 @@ CONFIG_SCHEMA = vol.Schema(
             {
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
-                vol.Required(CONF_COUNTRY): cv.string,
+                vol.Required(CONF_COUNTRY): cv.positive_int,
                 vol.Optional(
                     CONF_SCOOTER_ID, default=DEFAULT_SCOOTER_ID
                 ): cv.positive_int,
@@ -371,7 +371,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     username = config.get(CONF_USERNAME)
     password = config.get(CONF_PASSWORD)
     country = config.get(CONF_COUNTRY)
-    scooter_id = config.get(CONF_SCOOTER_ID)
+    scooter_id = int(config.get(CONF_SCOOTER_ID))
     api_uri = MOTOINFO_LIST_API_URI
 
     # get token and unique scooter sn
