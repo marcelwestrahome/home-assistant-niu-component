@@ -43,6 +43,7 @@ sensor:
       - LastTrackDistance      # LastTrack
       - LastTrackAverageSpeed  # LastTrack
       - LastTrackRidingtime    # LastTrack
+      - LastTrackThumb         # LastTrack
 
 ```
 
