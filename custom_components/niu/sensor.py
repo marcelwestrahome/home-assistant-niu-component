@@ -540,7 +540,6 @@ class NiuSensor(Entity):
                 "longitude": self._data_bridge.dataPos("lng"),
                 "gsm": self._data_bridge.dataMoto("gsm"),
                 "gps": self._data_bridge.dataMoto("gps"),
-                "time": self._data_bridge.dataDist("time"),
             }
 
     def update(self):
