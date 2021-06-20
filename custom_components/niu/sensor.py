@@ -541,6 +541,10 @@ class NiuSensor(Entity):
                 "gsm": self._data_bridge.dataMoto("gsm"),
                 "gps": self._data_bridge.dataMoto("gps"),
                 "time": self._data_bridge.dataDist("time"),
+                "range": self._data_bridge.dataMoto("estimatedMileage"),
+                "battery": self._data_bridge.dataBat("batteryCharging"),
+                "battery_grade": self._data_bridge.dataBat("gradeBattery"),
+                "centre_ctrl_batt": self._data_bridge.dataMoto("centreCtrlBattery"),
             }
 
     def update(self):
