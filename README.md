@@ -1,28 +1,65 @@
-Working on another project at this moment, building a campervan. 
-If this is finished I will update the component
-HA is also starting with a project for a native component
-
 # niu
 
-Home assistant niu sensor component to read the parameters of your scooter
-for more scooters just add the components again with increasing the scooter id
-scooter id 0 (one scooter)
-scooter id 1 (two scooters)
-etc
+This is a custom component for Home Assistant to integrate your Niu Scooter.
 
-Username and password are the credentials of the niu app.
+## Install
 
-At this moment the NIU sport plus has a bug, at least this type scooter stops after a certain time updating.
-When this happen, component will show the last updated values.
-With a restart of your your HA, you need to turn on your scooter for a short time to see all sensor values.
-Niu promises with a new firmware to solve this problem.
-Location is added as attributes to scooter_connected sensor
+You can install this custom component by adding this repository ([https://github.com/marcelwestrahome/home-assistant-niu-component](https://github.com/marcelwestrahome/home-assistant-niu-component)) to [HACS](https://hacs.xyz/) in the settings menu of HACS first. You will find the custom component in the integration menu afterwards, look for 'Niu Scooter Integration'. Alternatively, you can install it manually by copying the `custom_components` folder to your Home Assistant configuration folder.
 
-Installation:
-copy "_ init_.py, manifest.json, sensor.py" to custom_components\niu directory
-see configuration.yaml for adding the sensors to your system, change email address, password and country
-restart home assistant
+## Setup
 
-Need some time to make it  more official HA component, but his one stil works 
+```yaml
+# configuration.yaml
 
+sensor:
+  - platform: niu
+    email: user@example.com
+    password: mysecretpassword
+    country: 49
+    scooter_id: '0'
+    monitored_variables:
+      - BatteryCharge          # Battery
+      - Isconnected            # Battery
+      - TimesCharged           # Battery
+      - temperatureDesc        # Battery
+      - Temperature            # Battery
+      - BatteryGrade           # Battery
+      - CurrentSpeed           # Moto
+      - ScooterConnected       # Moto
+      - IsCharging             # Moto
+      - IsLocked               # Moto
+      - TimeLeft               # Moto
+      - EstimatedMileage       # Moto
+      - centreCtrlBatt         # Moto
+      - HDOP                   # Moto
+      - Longitude              # Moto
+      - Latitude               # Moto
+      - totalMileage           # OverAll
+      - DaysInUse              # OverAll
+      - Distance               # Distance
+      - RidingTime             # Distance
+      - LastTrackStartTime     # LastTrack
+      - LastTrackEndTime       # LastTrack
+      - LastTrackDistance      # LastTrack
+      - LastTrackAverageSpeed  # LastTrack
+      - LastTrackRidingtime    # LastTrack
+
+```
+
+Configuration variables:
+- **username** (*Required*): EMail address or mobile phone number or username.
+- **password** (*Required*): Niu Account password.
+- **country** (*Required*): Telephone country count without leading zeros or + sign, e.g. 49 instead of 0049 or +49.
+- **scooter_id** (*Optional*): The `scooter_id` to monitor. Defaults to 0.
+
+If you own multiple scooters just add the niu sensor platform multiple times and increase the `scooter_id`.
+
+## Known bugs
+
+At this moment the NIU sport plus has a bug, at least this type scooter stops after a certain time updating. When this happen, component will show the last updated values. With a restart of your your HA, you need to turn on your scooter for a short time to see all sensor values.
+Niu promises to solve this issue with a new firmware.
+
+## Roadmap
+
+Some day this component shall become an official HA integration. Until then just use this custom component.
 

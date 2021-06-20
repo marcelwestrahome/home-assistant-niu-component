@@ -12,8 +12,6 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
 
-VERSION = "0.0.2"
-
 ACCOUNT_BASE_URL = "https://account-fk.niu.com"
 LOGIN_URI = "/appv2/login"
 API_BASE_URL = "https://app-api-fk.niu.com"
@@ -25,11 +23,12 @@ TRACK_LIST_API_URI = "/v5/track/list/v2"
 # FIRMWARE_BAS_URL = '/motorota/getfirmwareversion'
 
 DOMAIN = "niu"
-CONF_EMAIL = "email"
+CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
 CONF_COUNTRY = "country"
-CONF_ID = "scooter_id"
-CONF_NAME = "name"
+CONF_SCOOTER_ID = "scooter_id"
+
+DEFAULT_SCOOTER_ID = 0
 
 SENSOR_TYPE_BAT = "BAT"
 SENSOR_TYPE_MOTO = "MOTO"
@@ -47,11 +46,12 @@ CONFIG_SCHEMA = vol.Schema(
     {
         DOMAIN: vol.Schema(
             {
-                vol.Required(CONF_EMAIL): cv.string,
+                vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Required(CONF_COUNTRY): cv.string,
-                vol.Required(CONF_ID): cv.positive_int,
-                vol.Required(CONF_NAME): cv.string,
+                vol.Optional(
+                    CONF_SCOOTER_ID, default=DEFAULT_SCOOTER_ID
+                ): cv.positive_int,
                 vol.Optional(
                     CONF_MONITORED_VARIABLES, default=["BatteryCharge"]
                 ): vol.All(
@@ -279,9 +279,9 @@ SENSOR_TYPES = {
 # NiuSensor(data_bridge, name,  sensor_id, uom, id_name,sensor_grp, sensor_prefix, device_class, sn, icon)
 
 
-def get_token(email, password, cc):
+def get_token(username, password, cc):
     url = ACCOUNT_BASE_URL + LOGIN_URI
-    data = {"account": email, "countryCode": cc, "password": password}
+    data = {"account": username, "countryCode": cc, "password": password}
     try:
         r = requests.post(url, data=data)
     except BaseException as e:
@@ -368,17 +368,16 @@ def post_info_track(path, sn, token):
 def setup_platform(hass, config, add_devices, discovery_info=None):
 
     # get config variables
-    email = config.get(CONF_EMAIL)
+    username = config.get(CONF_USERNAME)
     password = config.get(CONF_PASSWORD)
     country = config.get(CONF_COUNTRY)
-    id_scooter = int(config.get(CONF_ID))
+    scooter_id = config.get(CONF_SCOOTER_ID)
     api_uri = MOTOINFO_LIST_API_URI
-    # sensor_prefix = config.get(CONF_NAME)
 
     # get token and unique scooter sn
-    token = get_token(email, password, country)
-    sn = get_vehicles_info(api_uri, token)["data"][id_scooter]["sn"]
-    sensor_prefix = get_vehicles_info(api_uri, token)["data"][id_scooter]["name"]
+    token = get_token(username, password, country)
+    sn = get_vehicles_info(api_uri, token)["data"][scooter_id]["sn"]
+    sensor_prefix = get_vehicles_info(api_uri, token)["data"][scooter_id]["name"]
 
     sensors = config.get(CONF_MONITORED_VARIABLES)
 
