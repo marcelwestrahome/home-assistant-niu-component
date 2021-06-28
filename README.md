@@ -57,8 +57,10 @@ If you own multiple scooters just add the niu sensor platform multiple times and
 
 ## Known bugs
 
-At this moment the NIU sport plus has a bug, at least this type scooter stops after a certain time updating. When this happen, component will show the last updated values. With a restart of your your HA, you need to turn on your scooter for a short time to see all sensor values.
-Niu promises to solve this issue with a new firmware.
+~~At this moment the NIU sport plus has a bug, at least this type scooter stops after a certain time updating. When this happen, component will show the last updated values. With a restart of your your HA, you need to turn on your scooter for a short time to see all sensor values.
+Niu promises to solve this issue with a new firmware.~~
+
+The known bug that's causing the updates to stop is fixed by Niu in the scooters firmware v3 (`TRA01E18`). This update has to be manually installed at an authorized dealer (so no automagical OTA install). @rmettes reported this firmware as stable.
 
 ## Roadmap
 
