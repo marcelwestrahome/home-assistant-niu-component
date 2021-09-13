@@ -25,7 +25,7 @@ sensor:
       - Temperature            # Battery
       - BatteryGrade           # Battery
       - CurrentSpeed           # Moto
-      - ScooterConnected       # Moto
+      - ScooterConnected       # Moto (has attributes lon. lat. for plotting on a map)
       - IsCharging             # Moto
       - IsLocked               # Moto
       - TimeLeft               # Moto
