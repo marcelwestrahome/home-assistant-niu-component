@@ -15,7 +15,6 @@ sensor:
   - platform: niu
     username: user@example.com
     password: mysecretpassword
-    country: 49
     scooter_id: 0
     monitored_variables:
       - BatteryCharge          # Battery
@@ -50,7 +49,6 @@ sensor:
 Configuration variables:
 - **username** (*Required*): EMail address or mobile phone number or username.
 - **password** (*Required*): Niu Account password.
-- **country** (*Required*): Telephone country count without leading zeros or + sign, e.g. 49 instead of 0049 or +49.
 - **scooter_id** (*Optional*): The `scooter_id` to monitor. Defaults to 0.
 
 If you own multiple scooters just add the niu sensor platform multiple times and increase the `scooter_id`.

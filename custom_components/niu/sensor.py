@@ -4,6 +4,7 @@ import json
 import logging
 from time import gmtime, strftime
 
+import hashlib
 import requests
 import voluptuous as vol
 
@@ -13,12 +14,12 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
 
-ACCOUNT_BASE_URL = "https://account-fk.niu.com"
-LOGIN_URI = "/appv2/login"
-API_BASE_URL = "https://app-api-fk.niu.com"
+ACCOUNT_BASE_URL = "https://account.niu.com"
+LOGIN_URI = "/v3/api/oauth2/token"
+API_BASE_URL = "https://app-api.niu.com"
 MOTOR_BATTERY_API_URI = "/v3/motor_data/battery_info"
-MOTOR_INDEX_API_URI = "/v3/motor_data/index_info"
-MOTOINFO_LIST_API_URI = "/motoinfo/list"
+MOTOR_INDEX_API_URI = "/v5/scooter/motor_data/index_info"
+MOTOINFO_LIST_API_URI = "/v5/scooter/list"
 MOTOINFO_ALL_API_URI = "/motoinfo/overallTally"
 TRACK_LIST_API_URI = "/v5/track/list/v2"
 # FIRMWARE_BAS_URL = '/motorota/getfirmwareversion'
@@ -26,7 +27,6 @@ TRACK_LIST_API_URI = "/v5/track/list/v2"
 DOMAIN = "niu"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
-CONF_COUNTRY = "country"
 CONF_SCOOTER_ID = "scooter_id"
 
 DEFAULT_SCOOTER_ID = 0
@@ -47,7 +47,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_USERNAME): cv.string,
         vol.Required(CONF_PASSWORD): cv.string,
-        vol.Required(CONF_COUNTRY): cv.positive_int,
         vol.Optional(CONF_SCOOTER_ID, default=DEFAULT_SCOOTER_ID): cv.positive_int,
         vol.Optional(CONF_MONITORED_VARIABLES, default=["BatteryCharge"]): vol.All(
             cv.ensure_list,
@@ -275,24 +274,31 @@ SENSOR_TYPES = {
 # NiuSensor(data_bridge, name,  sensor_id, uom, id_name,sensor_grp, sensor_prefix, device_class, sn, icon)
 
 
-def get_token(username, password, cc):
+def get_token(username, password):
     url = ACCOUNT_BASE_URL + LOGIN_URI
-    data = {"account": username, "countryCode": cc, "password": password}
+    md5 = hashlib.md5(password.encode("utf-8")).hexdigest()
+    data = {
+        "account": username,
+        "password": md5,
+        "grant_type": "password",
+        "scope": "base",
+        "app_id": "niu_ktdrr960",
+    }
     try:
         r = requests.post(url, data=data)
     except BaseException as e:
         print(e)
         return False
     data = json.loads(r.content.decode())
-    return data["data"]["token"]
+    return data["data"]["token"]["access_token"]
 
 
 def get_vehicles_info(path, token):
 
     url = API_BASE_URL + path
-    headers = {"token": token, "Accept-Language": "en-US"}
+    headers = {"token": token}
     try:
-        r = requests.post(url, headers=headers, data=[])
+        r = requests.get(url, headers=headers, data=[])
     except ConnectionError:
         return False
     if r.status_code != 200:
@@ -305,7 +311,10 @@ def get_info(path, sn, token):
     url = API_BASE_URL + path
 
     params = {"sn": sn}
-    headers = {"token": token, "Accept-Language": "en-US"}
+    headers = {
+        "token": token,
+        "user-agent": "manager/4.6.48 (android; IN2020 11);lang=zh-CN;clientIdentifier=Domestic;timezone=Asia/Shanghai;model=IN2020;deviceName=IN2020;ostype=android",
+    }
     try:
 
         r = requests.get(url, headers=headers, params=params)
@@ -366,14 +375,15 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     # get config variables
     username = config.get(CONF_USERNAME)
     password = config.get(CONF_PASSWORD)
-    country = config.get(CONF_COUNTRY)
     scooter_id = config.get(CONF_SCOOTER_ID)
     api_uri = MOTOINFO_LIST_API_URI
 
     # get token and unique scooter sn
-    token = get_token(username, password, country)
-    sn = get_vehicles_info(api_uri, token)["data"][scooter_id]["sn"]
-    sensor_prefix = get_vehicles_info(api_uri, token)["data"][scooter_id]["name"]
+    token = get_token(username, password)
+    sn = get_vehicles_info(api_uri, token)["data"]["items"][scooter_id]["sn_id"]
+    sensor_prefix = get_vehicles_info(api_uri, token)["data"]["items"][scooter_id][
+        "scooter_name"
+    ]
 
     sensors = config.get(CONF_MONITORED_VARIABLES)
 
