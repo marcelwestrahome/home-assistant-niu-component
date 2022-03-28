@@ -62,6 +62,11 @@ Niu promises to solve this issue with a new firmware.~~
 
 The known bug that's causing the updates to stop is fixed by Niu in the scooters firmware v3 (`TRA01E18`). This update has to be manually installed at an authorized dealer (so no automagical OTA install). @rmettes reported this firmware as stable.
 
+I recieved new firmware for my scooter (TRA01E23). component will alsways show the new updated data. 
+
+##
+Component works also for KQ13, however this has only a bluetooth interface, so your need to be connected (not all sensors are working)
+
 ## Roadmap
 
 Some day this component shall become an official HA integration. Until then just use this custom component.
