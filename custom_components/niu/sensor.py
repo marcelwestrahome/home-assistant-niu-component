@@ -545,18 +545,10 @@ class NiuSensor(Entity):
     def update(self):
         if self._sensor_grp == SENSOR_TYPE_BAT:
             self._data_bridge.updateBat()
-            if not (
-                (self._id_name == "batteryCharging" or self._id_name == "temperature")
-                and self._data_bridge.dataBat("batteryCharging") == 0
-            ):
-                self._state = self._data_bridge.dataBat(self._id_name)
+            self._state = self._data_bridge.dataBat(self._id_name)
         elif self._sensor_grp == SENSOR_TYPE_MOTO:
             self._data_bridge.updateMoto()
-            if not (
-                (self._id_name == "estimatedMileage" or self._id_name == "leftTime")
-                and self._data_bridge.dataMoto("estimatedMileage") == 0
-            ):
-                self._state = self._data_bridge.dataMoto(self._id_name)
+            self._state = self._data_bridge.dataMoto(self._id_name)
         elif self._sensor_grp == SENSOR_TYPE_POS:
             self._data_bridge.updateMoto()
             self._state = self._data_bridge.dataPos(self._id_name)
