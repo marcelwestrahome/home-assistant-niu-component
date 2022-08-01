@@ -61,6 +61,18 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
                         "temperatureDesc",
                         "Temperature",
                         "BatteryGrade",
+                        "CompartmentA.BatteryCharge",
+                        "CompartmentA.Isconnected",
+                        "CompartmentA.TimesCharged",
+                        "CompartmentA.temperatureDesc",
+                        "CompartmentA.Temperature",
+                        "CompartmentA.BatteryGrade",
+                        "CompartmentB.BatteryCharge",
+                        "CompartmentB.Isconnected",
+                        "CompartmentB.TimesCharged",
+                        "CompartmentB.temperatureDesc",
+                        "CompartmentB.Temperature",
+                        "CompartmentB.BatteryGrade",              
                         "CurrentSpeed",
                         "ScooterConnected",
                         "IsCharging",
@@ -133,6 +145,102 @@ SENSOR_TYPES = {
         "battery_grade",
         "%",
         "gradeBattery",
+        SENSOR_TYPE_BAT,
+        "battery",
+        "mdi:car-battery",
+    ],
+    "CompartmentA.BatteryCharge": [
+        "compartmentA_battery_charge",
+        "%",
+        "compartmentA.batteryCharging",
+        SENSOR_TYPE_BAT,
+        "battery",
+        "mdi:battery-charging-50",
+    ],
+    "CompartmentA.Isconnected": [
+        "compartmentA_is_connected",
+        "",
+        "compartmentA.isConnected",
+        SENSOR_TYPE_BAT,
+        "connectivity",
+        "mdi:connection",
+    ],
+    "CompartmentA.TimesCharged": [
+        "compartmentA_times_charged",
+        "x",
+        "compartmentA.chargedTimes",
+        SENSOR_TYPE_BAT,
+        "none",
+        "mdi:battery-charging-wireless",
+    ],
+    "CompartmentA.temperatureDesc": [
+        "compartmentA_temp_descr",
+        "",
+        "compartmentA.temperatureDesc",
+        SENSOR_TYPE_BAT,
+        "none",
+        "mdi:thermometer-alert",
+    ],
+    "CompartmentA.Temperature": [
+        "compartmentA_temperature",
+        "°C",
+        "compartmentA.temperature",
+        SENSOR_TYPE_BAT,
+        "temperature",
+        "mdi:thermometer",
+    ],
+    "CompartmentA.BatteryGrade": [
+        "compartmentA_battery_grade",
+        "%",
+        "compartmentA.gradeBattery",
+        SENSOR_TYPE_BAT,
+        "battery",
+        "mdi:car-battery",
+    ],
+    "CompartmentB.BatteryCharge": [
+        "compartmentB_battery_charge",
+        "%",
+        "compartmentB.batteryCharging",
+        SENSOR_TYPE_BAT,
+        "battery",
+        "mdi:battery-charging-50",
+    ],
+    "CompartmentB.Isconnected": [
+        "compartmentB_is_connected",
+        "",
+        "compartmentB.isConnected",
+        SENSOR_TYPE_BAT,
+        "connectivity",
+        "mdi:connection",
+    ],
+    "CompartmentB.TimesCharged": [
+        "compartmentB_times_charged",
+        "x",
+        "compartmentB.chargedTimes",
+        SENSOR_TYPE_BAT,
+        "none",
+        "mdi:battery-charging-wireless",
+    ],
+    "CompartmentB.temperatureDesc": [
+        "compartmentB_temp_descr",
+        "",
+        "compartmentB.temperatureDesc",
+        SENSOR_TYPE_BAT,
+        "none",
+        "mdi:thermometer-alert",
+    ],
+    "CompartmentB.Temperature": [
+        "compartmentB_temperature",
+        "°C",
+        "compartmentB.temperature",
+        SENSOR_TYPE_BAT,
+        "temperature",
+        "mdi:thermometer",
+    ],
+    "CompartmentB.BatteryGrade": [
+        "compartmentB_battery_grade",
+        "%",
+        "compartmentB.gradeBattery",
         SENSOR_TYPE_BAT,
         "battery",
         "mdi:car-battery",
@@ -416,7 +524,16 @@ class NiuDataBridge(object):
         self._token = token
 
     def dataBat(self, id_field):
-        return self._dataBat["data"]["batteries"]["compartmentA"][id_field]
+        if "." in id_field:
+            batteryItems = id_field.split(".", 1)
+            compartment = batteryItems[0]
+            batterySensor = batteryItems[1]
+        else:
+            compartment = "compartmentA"
+            batterySensor = id_field
+        if not compartment in self._dataBat["data"]["batteries"]:
+            return None                                                                        
+        return self._dataBat["data"]["batteries"][compartment][batterySensor]
 
     def dataMoto(self, id_field):
         return self._dataMoto["data"][id_field]
@@ -530,15 +647,26 @@ class NiuSensor(Entity):
     def extra_state_attributes(self):
         if self._sensor_grp == SENSOR_TYPE_MOTO and self._id_name == "isConnected":
             return {
-                "bmsId": self._data_bridge.dataBat("bmsId"),
+                "compartmentA_bmsId": self._data_bridge.dataBat("compartmentA.bmsId"),
+                "compartmentB_bmsId": self._data_bridge.dataBat("compartmentB.bmsId"),
                 "latitude": self._data_bridge.dataPos("lat"),
                 "longitude": self._data_bridge.dataPos("lng"),
                 "gsm": self._data_bridge.dataMoto("gsm"),
                 "gps": self._data_bridge.dataMoto("gps"),
                 "time": self._data_bridge.dataDist("time"),
                 "range": self._data_bridge.dataMoto("estimatedMileage"),
-                "battery": self._data_bridge.dataBat("batteryCharging"),
-                "battery_grade": self._data_bridge.dataBat("gradeBattery"),
+                "compartmentA_battery": self._data_bridge.dataBat(
+                    "compartmentA.batteryCharging"
+                ),
+                "compartmentB_battery": self._data_bridge.dataBat(
+                    "compartmentB.batteryCharging"
+                ),
+                "compartmentA_battery_grade": self._data_bridge.dataBat(
+                    "compartmentA.gradeBattery"
+                ),
+                "compartmentB_battery_grade": self._data_bridge.dataBat(
+                    "compartmentB.gradeBattery"
+                ),
                 "centre_ctrl_batt": self._data_bridge.dataMoto("centreCtrlBattery"),
             }
 

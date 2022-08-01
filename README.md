@@ -18,12 +18,24 @@ sensor:
     country: 49
     scooter_id: 0
     monitored_variables:
-      - BatteryCharge          # Battery
-      - Isconnected            # Battery
-      - TimesCharged           # Battery
-      - temperatureDesc        # Battery
-      - Temperature            # Battery
-      - BatteryGrade           # Battery
+      - BatteryCharge          # Battery (DEPRECATED Will be replaced by CompartmentA.BatteryCharge)
+      - Isconnected            # Battery (DEPRECATED Will be replaced by CompartmentA.Isconnected)
+      - TimesCharged           # Battery (DEPRECATED Will be replaced by CompartmentA.TimesCharged)
+      - temperatureDesc        # Battery (DEPRECATED Will be replaced by CompartmentA.temperatureDesc)
+      - Temperature            # Battery (DEPRECATED Will be replaced by CompartmentA.Temperature)
+      - BatteryGrade           # Battery (DEPRECATED Will be replaced by CompartmentA.BatteryGrade)
+	  - CompartmentA.BatteryCharge          # Battery A
+      - CompartmentA.Isconnected            # Battery A
+      - CompartmentA.TimesCharged           # Battery A
+      - CompartmentA.temperatureDesc        # Battery A
+      - CompartmentA.Temperature            # Battery A
+      - CompartmentA.BatteryGrade           # Battery A
+      - CompartmentB.BatteryCharge          # Battery B
+      - CompartmentB.Isconnected            # Battery B
+      - CompartmentB.TimesCharged           # Battery B
+      - CompartmentB.temperatureDesc        # Battery B
+      - CompartmentB.Temperature            # Battery B
+      - CompartmentB.BatteryGrade           # Battery B
       - CurrentSpeed           # Moto
       - ScooterConnected       # Moto (has attributes lon. lat. for plotting on a map)
       - IsCharging             # Moto
