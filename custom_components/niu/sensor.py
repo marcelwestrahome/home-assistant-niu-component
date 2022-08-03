@@ -395,7 +395,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
                         data_bridge,
                         compartment[:-1].capitalize()
                         + compartment[-1].upper()
-                        + "."
+                        + " "
                         + sensor,
                         compartment + "_" + sensor_config[0],
                         sensor_config[1],
