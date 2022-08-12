@@ -349,7 +349,7 @@ def post_info_track(path, sn, token):
             url,
             headers=headers,
             params=params,
-            data={"index": "0", "pagesize": 10, "sn": sn},
+            json={"index": "0", "pagesize": 10, "sn": sn},
         )
     except ConnectionError:
         return False
