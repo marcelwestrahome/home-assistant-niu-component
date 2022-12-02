@@ -6,8 +6,12 @@ Forked by https://github.com/marcelwestrahome/home-assistant-niu-component
 
 Now this integration is _asynchronous_ and it is easy installable via config flow.
 
-If you select the Last track sensor automatically it will create a camera integration, with the rendered image of your last track.
+## Changes:
+* Now it will generate automatically a Niu device so all the sensors and the camera will grouped
+![auto device](images/niu_integration_device.png)
+* If you select the Last track sensor automatically it will create a camera integration, with the rendered image of your last track.
 ![last track camera](images/niu_integration_camera.png)
+
 
 ## Install
 
