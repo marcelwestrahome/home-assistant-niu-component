@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 
-async def async_setup_entry(hass, entry, async_add_entities) -> None:
+async def async_forward_entry_setups(hass, entry, async_add_entities) -> None:
 
     niu_auth = entry.data.get(CONF_AUTH, None)
     if niu_auth == None:
