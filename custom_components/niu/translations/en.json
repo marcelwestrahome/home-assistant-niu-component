@@ -1,0 +1,25 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "invalid_path": "Invalid path",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "username": "Username",
+                    "password": "Password",
+                    "country": "Country id",
+                    "scooter_id": "Scooter id",
+                    "sensors_selected": "Select which sensor to integrate"
+                }
+            }
+        }
+    },
+    "title": "Niu Integration"
+}
