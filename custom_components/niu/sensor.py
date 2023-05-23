@@ -388,48 +388,26 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     devices = []
     for sensor in sensors:
         sensor_config = SENSOR_TYPES[sensor]
-        if sensor_config[3] == SENSOR_TYPE_BAT:
-            for compartment in data_bridge._batteriesCompartments:
-                devices.append(
-                    NiuSensor(
-                        data_bridge,
-                        compartment[:-1].capitalize()
-                        + compartment[-1].upper()
-                        + " "
-                        + sensor,
-                        compartment + "_" + sensor_config[0],
-                        sensor_config[1],
-                        compartment + "." + sensor_config[2],
-                        sensor_config[3],
-                        sensor_prefix,
-                        sensor_config[4],
-                        sn,
-                        sensor_config[5],
-                    )
-                )
-        else:
-            devices.append(
-                NiuSensor(
-                    data_bridge,
-                    sensor,
-                    sensor_config[0],
-                    sensor_config[1],
-                    sensor_config[2],
-                    sensor_config[3],
-                    sensor_prefix,
-                    sensor_config[4],
-                    sn,
-                    sensor_config[5],
-                )
+        devices.append(
+            NiuSensor(
+                data_bridge,
+                sensor,
+                sensor_config[0],
+                sensor_config[1],
+                sensor_config[2],
+                sensor_config[3],
+                sensor_prefix,
+                sensor_config[4],
+                sn,
+                sensor_config[5],
             )
-
+        )
     add_devices(devices)
 
 
 class NiuDataBridge(object):
     def __init__(self, sn, token):
 
-        self._batteriesCompartments = []
         self._dataBat = None
         self._dataMoto = None
         self._dataMotoInfo = None
@@ -438,8 +416,7 @@ class NiuDataBridge(object):
         self._token = token
 
     def dataBat(self, id_field):
-        batteryItems = id_field.split(".", 1)
-        return self._dataBat["data"]["batteries"][batteryItems[0]][batteryItems[1]]
+        return self._dataBat["data"]["batteries"]["compartmentA"][id_field]
 
     def dataMoto(self, id_field):
         return self._dataMoto["data"][id_field]
@@ -472,9 +449,6 @@ class NiuDataBridge(object):
     @Throttle(timedelta(seconds=1))
     def updateBat(self):
         self._dataBat = get_info(MOTOR_BATTERY_API_URI, self._sn, self._token)
-        if not self._dataBat is None:
-            for compartment in self._dataBat["data"]["batteries"]:
-                self._batteriesCompartments.append(compartment)
 
     @Throttle(timedelta(seconds=1))
     def updateMoto(self):
@@ -503,7 +477,6 @@ class NiuSensor(Entity):
         sn,
         icon,
     ):
-
         self._unique_id = "sensor.niu_scooter_" + sn + "_" + sensor_id
         self._name = (
             "NIU Scooter " + sensor_prefix + " " + name
@@ -556,27 +529,18 @@ class NiuSensor(Entity):
     @property
     def extra_state_attributes(self):
         if self._sensor_grp == SENSOR_TYPE_MOTO and self._id_name == "isConnected":
-            attrSensor = {
+            return {
+                "bmsId": self._data_bridge.dataBat("bmsId"),
                 "latitude": self._data_bridge.dataPos("lat"),
                 "longitude": self._data_bridge.dataPos("lng"),
                 "gsm": self._data_bridge.dataMoto("gsm"),
                 "gps": self._data_bridge.dataMoto("gps"),
                 "time": self._data_bridge.dataDist("time"),
                 "range": self._data_bridge.dataMoto("estimatedMileage"),
+                "battery": self._data_bridge.dataBat("batteryCharging"),
+                "battery_grade": self._data_bridge.dataBat("gradeBattery"),
                 "centre_ctrl_batt": self._data_bridge.dataMoto("centreCtrlBattery"),
             }
-
-            for compartment in self._data_bridge._batteriesCompartments:
-                attrSensor[compartment + "_bmsId"] = self._data_bridge.dataBat(
-                    compartment + ".bmsId"
-                )
-                attrSensor[compartment + "_battery"] = self._data_bridge.dataBat(
-                    compartment + ".batteryCharging"
-                )
-                attrSensor[compartment + "_battery_grade"] = self._data_bridge.dataBat(
-                    compartment + ".gradeBattery"
-                )
-            return attrSensor
 
     def update(self):
         if self._sensor_grp == SENSOR_TYPE_BAT:
