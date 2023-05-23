@@ -10,10 +10,7 @@ Now this integration is _asynchronous_ and it is easy installable via config flo
 * If you select the Last track sensor automatically it will create a camera integration, with the rendered image of your last track.
 ![last track camera](images/niu_integration_camera.png)
 
-
-## Install
-
-Look for 'Niu Scooter Integration'. Alternatively, you can install it manually by copying the `custom_components` folder to your Home Assistant configuration folder.
+With the thanks to pikka97 !!!
 
 ## Setup
 1. In Home Assistant's settings under "device and services" click on the "Add integration" button.
