@@ -7,7 +7,6 @@
   "documentation": "https://github.com/pikka97/home-assistant-niu-component",
   "issue_tracker": "https://github.com/pikka97/home-assistant-niu-component/issues",
   "requirements": [],
-  "dependencies": [],
   "codeowners": [
     "@pikka97",
     "@mwestra"
