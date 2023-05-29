@@ -20,4 +20,6 @@ With the thanks to pikka97 !!!
 4. Enjoy your new Niu integration :-)
 
 ## Known bugs
+
+some people had problems with this version please take the latest 1.o  versions
 See https://github.com/marcelwestrahome/home-assistant-niu-component repository
