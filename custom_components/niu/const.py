@@ -12,7 +12,7 @@ DOMAIN = "niu"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
 CONF_SCOOTER_ID = "scooter_id"
-CONF_AUTH = 'conf_auth'
+CONF_AUTH = "conf_auth"
 CONF_SENSORS = "sensors_selected"
 
 DEFAULT_SCOOTER_ID = 0
@@ -51,15 +51,17 @@ AVAILABLE_SENSORS = [
     "LastTrackDistance",
     "LastTrackAverageSpeed",
     "LastTrackRidingtime",
-    "LastTrackThumb"
+    "LastTrackThumb",
 ]
 
+
+import voluptuous as vol
+
+from homeassistant.components.sensor import PLATFORM_SCHEMA
 
 # Sensors schemas
 from homeassistant.const import CONF_MONITORED_VARIABLES
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.sensor import PLATFORM_SCHEMA
-import voluptuous as vol
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -285,5 +287,5 @@ SENSOR_TYPES = {
         SENSOR_TYPE_TRACK,
         "none",
         "mdi:map",
-    ]
+    ],
 }
