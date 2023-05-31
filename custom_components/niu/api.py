@@ -1,10 +1,14 @@
-from .const import *
-import hashlib
-import requests
-import json
 from datetime import datetime, timedelta
+import hashlib
+import json
+
 # from homeassistant.util import Throttle
 from time import gmtime, strftime
+
+import requests
+
+from .const import *
+
 
 class NiuApi:
     def __init__(self, username, password, scooter_id) -> None:
@@ -20,14 +24,17 @@ class NiuApi:
     def initApi(self):
         self.token = self.get_token()
         api_uri = MOTOINFO_LIST_API_URI
-        self.sn = self.get_vehicles_info(api_uri)["data"]["items"][self.scooter_id]["sn_id"]
-        self.sensor_prefix = self.get_vehicles_info(api_uri)["data"]["items"][self.scooter_id]["scooter_name"]
+        self.sn = self.get_vehicles_info(api_uri)["data"]["items"][self.scooter_id][
+            "sn_id"
+        ]
+        self.sensor_prefix = self.get_vehicles_info(api_uri)["data"]["items"][
+            self.scooter_id
+        ]["scooter_name"]
         self.updateBat()
         self.updateMoto()
         self.updateMotoInfo()
         self.updateTrackInfo()
 
-    
     def get_token(self):
         username = self.username
         password = self.password
@@ -49,9 +56,7 @@ class NiuApi:
         data = json.loads(r.content.decode())
         return data["data"]["token"]["access_token"]
 
-
     def get_vehicles_info(self, path):
-
         token = self.token
 
         url = API_BASE_URL + path
@@ -65,8 +70,10 @@ class NiuApi:
         data = json.loads(r.content.decode())
         return data
 
-
-    def get_info(self,path, ):
+    def get_info(
+        self,
+        path,
+    ):
         sn = self.sn
         token = self.token
         url = API_BASE_URL + path
@@ -77,7 +84,6 @@ class NiuApi:
             "user-agent": "manager/4.10.4 (android; IN2020 11);lang=zh-CN;clientIdentifier=Domestic;timezone=Asia/Shanghai;model=IN2020;deviceName=IN2020;ostype=android",
         }
         try:
-
             r = requests.get(url, headers=headers, params=params)
 
         except ConnectionError:
@@ -89,8 +95,10 @@ class NiuApi:
             return False
         return data
 
-
-    def post_info(self, path,):
+    def post_info(
+        self,
+        path,
+    ):
         sn, token = self.sn, self.token
         url = API_BASE_URL + path
         params = {}
@@ -105,7 +113,6 @@ class NiuApi:
         if data["status"] != 0:
             return False
         return data
-
 
     def post_info_track(self, path):
         sn, token = self.sn, self.token
@@ -132,7 +139,6 @@ class NiuApi:
             return False
         return data
 
-
     def getDataBat(self, id_field):
         return self.dataBat["data"]["batteries"]["compartmentA"][id_field]
 
@@ -154,9 +160,7 @@ class NiuApi:
                 (self.dataTrackInfo["data"][0][id_field]) / 1000
             ).strftime("%Y-%m-%d %H:%M:%S")
         if id_field == "ridingtime":
-            return strftime(
-                "%H:%M:%S", gmtime(self.dataTrackInfo["data"][0][id_field])
-            )
+            return strftime("%H:%M:%S", gmtime(self.dataTrackInfo["data"][0][id_field]))
         if id_field == "track_thumb":
             thumburl = self.dataTrackInfo["data"][0][id_field].replace(
                 "app-api.niucache.com", "app-api-fk.niu.com"
@@ -176,7 +180,8 @@ class NiuApi:
     def updateTrackInfo(self):
         self.dataTrackInfo = self.post_info_track(TRACK_LIST_API_URI)
 
-'''class NiuDataBridge(object):
+
+"""class NiuDataBridge(object):
     async def __init__(self, api):
     #  hass, username, password, country, scooter_id):
 
@@ -246,4 +251,4 @@ class NiuApi:
 
     @Throttle(timedelta(seconds=1))
     def updateTrackInfo(self):
-        self._dataTrackInfo = self.api.post_info_track(TRACK_LIST_API_URI)'''
+        self._dataTrackInfo = self.api.post_info_track(TRACK_LIST_API_URI)"""
