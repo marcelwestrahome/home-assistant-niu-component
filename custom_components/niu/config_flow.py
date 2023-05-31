@@ -24,7 +24,6 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME):  str,
         vol.Required(CONF_PASSWORD):  str,
-        vol.Required(CONF_COUNTRY, default=ITALY_COUNTRY_ID):  str,
         vol.Required(CONF_SCOOTER_ID,  default=DEFAULT_SCOOTER_ID):  int,
         vol.Required(CONF_SENSORS, default=AVAILABLE_SENSORS): selector.SelectSelector(
              selector.SelectSelectorConfig(options=AVAILABLE_SENSORS,
@@ -37,15 +36,14 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 
 
 class NiuAuthenticator:
-    def __init__(self, username, password, country, scooter_id, sensors_selected) -> None:
+    def __init__(self, username, password, scooter_id, sensors_selected) -> None:
         self.username = username
         self.password = password
-        self.country = country
         self.scooter_id = scooter_id
         self.sensors_selected = sensors_selected
     
     async def authenticate(self, hass):
-        api = NiuApi(self.username, self.password, self.country, self.scooter_id)
+        api = NiuApi(self.username, self.password, self.scooter_id)
         try:
             token = await hass.async_add_executor_job(api.get_token)
             if isinstance(token, bool):
@@ -71,10 +69,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input != None:
             username = user_input[CONF_USERNAME]
             password = user_input[CONF_PASSWORD]
-            country = user_input[CONF_COUNTRY]
             scooter_id = user_input[CONF_SCOOTER_ID]
             sensors_selected = user_input[CONF_SENSORS]
-            niu_auth = NiuAuthenticator(username, password, country, scooter_id, sensors_selected)
+            niu_auth = NiuAuthenticator(username, password, scooter_id, sensors_selected)
             auth_result = await niu_auth.authenticate(self.hass)
             if auth_result:
                 return self.async_create_entry(title=integration_title, data={CONF_AUTH:niu_auth.__dict__})

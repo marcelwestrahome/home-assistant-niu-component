@@ -6,7 +6,6 @@
           "data": {
             "CONF_USERNAME": "[%key:common::config_flow::data::conf_username%]",
             "CONF_PASSWORD": "[%key:common::config_flow::data::conf_password%]",
-            "CONF_COUNTRY": "[%key:common::config_flow::data::conf_country%]",
             "CONF_SCOOTER_ID": "[%key:common::config_flow::data::conf_scooter_id%]"
           }
         }
