@@ -25,11 +25,10 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
     username = niu_auth[CONF_USERNAME]
     password = niu_auth[CONF_PASSWORD]
-    country = niu_auth[CONF_COUNTRY]
     scooter_id = niu_auth[CONF_SCOOTER_ID]
     sensors_selected = niu_auth[CONF_SENSORS]
 
-    api = NiuApi(username, password, country, scooter_id)
+    api = NiuApi(username, password, scooter_id)
     await hass.async_add_executor_job(api.initApi)
 
     # add sensors

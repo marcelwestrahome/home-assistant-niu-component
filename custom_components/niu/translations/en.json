@@ -14,7 +14,6 @@
                 "data": {
                     "username": "Username",
                     "password": "Password",
-                    "country": "Country id",
                     "scooter_id": "Scooter id",
                     "sensors_selected": "Select which sensor to integrate"
                 }

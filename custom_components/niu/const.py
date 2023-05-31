@@ -1,9 +1,9 @@
 ACCOUNT_BASE_URL = "https://account-fk.niu.com"
-LOGIN_URI = "/appv2/login"
+LOGIN_URI = "/v3/api/oauth2/token"
 API_BASE_URL = "https://app-api-fk.niu.com"
 MOTOR_BATTERY_API_URI = "/v3/motor_data/battery_info"
-MOTOR_INDEX_API_URI = "/v3/motor_data/index_info"
-MOTOINFO_LIST_API_URI = "/motoinfo/list"
+MOTOR_INDEX_API_URI = "/v5/scooter/motor_data/index_info"
+MOTOINFO_LIST_API_URI = "/v5/scooter/list"
 MOTOINFO_ALL_API_URI = "/motoinfo/overallTally"
 TRACK_LIST_API_URI = "/v5/track/list/v2"
 # FIRMWARE_BAS_URL = '/motorota/getfirmwareversion'
@@ -11,13 +11,11 @@ TRACK_LIST_API_URI = "/v5/track/list/v2"
 DOMAIN = "niu"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
-CONF_COUNTRY = "country"
 CONF_SCOOTER_ID = "scooter_id"
 CONF_AUTH = 'conf_auth'
 CONF_SENSORS = "sensors_selected"
 
 DEFAULT_SCOOTER_ID = 0
-ITALY_COUNTRY_ID = "39"
 
 SENSOR_TYPE_BAT = "BAT"
 SENSOR_TYPE_MOTO = "MOTO"
@@ -67,7 +65,6 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_USERNAME): cv.string,
         vol.Required(CONF_PASSWORD): cv.string,
-        vol.Required(CONF_COUNTRY): cv.positive_int,
         vol.Optional(CONF_SCOOTER_ID, default=DEFAULT_SCOOTER_ID): cv.positive_int,
         vol.Optional(CONF_MONITORED_VARIABLES, default=["BatteryCharge"]): vol.All(
             cv.ensure_list,

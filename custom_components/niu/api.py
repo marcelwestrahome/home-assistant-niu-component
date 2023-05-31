@@ -1,4 +1,5 @@
 from .const import *
+import hashlib
 import requests
 import json
 from datetime import datetime, timedelta
@@ -6,10 +7,9 @@ from datetime import datetime, timedelta
 from time import gmtime, strftime
 
 class NiuApi:
-    def __init__(self, username, password, country, scooter_id) -> None:
+    def __init__(self, username, password, scooter_id) -> None:
         self.username = username
         self.password = password
-        self.country = country
         self.scooter_id = int(scooter_id)
 
         self.dataBat = None
@@ -20,8 +20,8 @@ class NiuApi:
     def initApi(self):
         self.token = self.get_token()
         api_uri = MOTOINFO_LIST_API_URI
-        self.sn = self.get_vehicles_info(api_uri)["data"][self.scooter_id]["sn"]
-        self.sensor_prefix = self.get_vehicles_info(api_uri)["data"][self.scooter_id]["name"]
+        self.sn = self.get_vehicles_info(api_uri)["data"]["items"][self.scooter_id]["sn_id"]
+        self.sensor_prefix = self.get_vehicles_info(api_uri)["data"]["items"][self.scooter_id]["scooter_name"]
         self.updateBat()
         self.updateMoto()
         self.updateMotoInfo()
@@ -31,17 +31,23 @@ class NiuApi:
     def get_token(self):
         username = self.username
         password = self.password
-        cc = self.country
 
         url = ACCOUNT_BASE_URL + LOGIN_URI
-        data = {"account": username, "countryCode": cc, "password": password}
+        md5 = hashlib.md5(password.encode("utf-8")).hexdigest()
+        data = {
+            "account": username,
+            "password": md5,
+            "grant_type": "password",
+            "scope": "base",
+            "app_id": "niu_ktdrr960",
+        }
         try:
             r = requests.post(url, data=data)
         except BaseException as e:
             print(e)
             return False
         data = json.loads(r.content.decode())
-        return data["data"]["token"]
+        return data["data"]["token"]["access_token"]
 
 
     def get_vehicles_info(self, path):
@@ -49,9 +55,9 @@ class NiuApi:
         token = self.token
 
         url = API_BASE_URL + path
-        headers = {"token": token, "Accept-Language": "en-US"}
+        headers = {"token": token}
         try:
-            r = requests.post(url, headers=headers, data=[])
+            r = requests.get(url, headers=headers, data=[])
         except ConnectionError:
             return False
         if r.status_code != 200:
@@ -66,7 +72,10 @@ class NiuApi:
         url = API_BASE_URL + path
 
         params = {"sn": sn}
-        headers = {"token": token, "Accept-Language": "en-US"}
+        headers = {
+            "token": token,
+            "user-agent": "manager/4.10.4 (android; IN2020 11);lang=zh-CN;clientIdentifier=Domestic;timezone=Asia/Shanghai;model=IN2020;deviceName=IN2020;ostype=android",
+        }
         try:
 
             r = requests.get(url, headers=headers, params=params)
