@@ -84,7 +84,7 @@ class NiuSensor(Entity):
         self._id_name = id_name  # info field for parsing the URL
         self._sensor_grp = sensor_grp  # info field for choosing the right URL
         self._icon = icon
-        self._state = None
+        self._state = 0
 
     @property
     def unique_id(self):
