@@ -139,10 +139,8 @@ class NiuApi:
             return False
         return data
 
-    def getDataBat(self, id_field):
-        ret_val = self.dataBat["data"]["batteries"]["compartmentA"][id_field]
-        print(ret_val)
-        return ret_val
+    def getDataBat(self, id_field): 
+        return self.dataBat["data"]["batteries"]["compartmentA"][id_field]
 
     def getDataMoto(self, id_field):
         return self.dataMoto["data"][id_field]
