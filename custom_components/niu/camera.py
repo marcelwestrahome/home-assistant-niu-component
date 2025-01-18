@@ -6,7 +6,7 @@ from typing import final
 
 import httpx
 
-from homeassistant.components.camera import STATE_IDLE
+from homeassistant.components.camera import CameraState
 from homeassistant.components.generic.camera import GenericCamera
 from homeassistant.helpers.httpx_client import get_async_client
 
@@ -58,7 +58,7 @@ class LastTrackCamera(GenericCamera):
     @final
     def state(self) -> str:
         """Return the camera state."""
-        return STATE_IDLE
+        return CameraState.IDLE
 
     @property
     def is_on(self) -> bool:
