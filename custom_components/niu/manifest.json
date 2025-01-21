@@ -12,5 +12,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/marcelwestrahome/home-assistant-niu-component/issues",
   "requirements": [],
-  "version": "2.1.7"
+  "version": "2.1.8"
 }
