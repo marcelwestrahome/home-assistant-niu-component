@@ -42,7 +42,7 @@ class NiuAuthenticator:
         self.sensors_selected = sensors_selected
 
     async def authenticate(self, hass):
-        api = NiuApi(self.username, self.password, hass.config.language, hass.config.time_zone, self.scooter_id)
+        api = NiuApi(self.username, self.password, f"{hass.config.language}-{hass.config.country}", hass.config.time_zone, self.scooter_id)
         try:
             token = await hass.async_add_executor_job(api.get_token)
             if isinstance(token, bool):
