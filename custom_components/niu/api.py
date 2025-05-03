@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import hashlib
 import json
-import logging
 
 from time import gmtime, strftime
 
@@ -9,7 +8,6 @@ import requests
 
 from .const import *
 
-_LOGGER = logging.getLogger(__name__)
 
 class NiuApi:
     def __init__(self, username, password, language, time_zone, scooter_id) -> None:
@@ -165,7 +163,6 @@ class NiuApi:
         return self.dataTrackInfo["data"][0][id_field]
 
     def updateBat(self):
-        _LOGGER.error(f"Updating with language: {self.language} and time_zone: {self.time_zone}")
         self.dataBat = self.get_info(MOTOR_BATTERY_API_URI)
 
     def updateMoto(self):
