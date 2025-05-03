@@ -151,16 +151,16 @@ class NiuApi:
     def getDataTrack(self, id_field):
         if id_field == "startTime" or id_field == "endTime":
             return datetime.fromtimestamp(
-                (self.dataTrackInfo["data"][0][id_field]) / 1000
+                (self.dataTrackInfo["data"]["items"][0][id_field]) / 1000
             ).strftime("%Y-%m-%d %H:%M:%S")
         if id_field == "ridingtime":
-            return strftime("%H:%M:%S", gmtime(self.dataTrackInfo["data"][0][id_field]))
+            return strftime("%H:%M:%S", gmtime(self.dataTrackInfo["data"]["items"][0][id_field]))
         if id_field == "track_thumb":
-            thumburl = self.dataTrackInfo["data"][0][id_field].replace(
+            thumburl = self.dataTrackInfo["data"]["items"][0][id_field].replace(
                 "app-api.niucache.com", "app-api-fk.niu.com"
             )
             return thumburl.replace("/track/thumb/", "/track/overseas/thumb/")
-        return self.dataTrackInfo["data"][0][id_field]
+        return self.dataTrackInfo["data"]["items"][0][id_field]
 
     def updateBat(self):
         self.dataBat = self.get_info(MOTOR_BATTERY_API_URI)
