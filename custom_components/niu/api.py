@@ -24,8 +24,6 @@ class NiuApi:
         self.dataMotoInfo = None
         self.dataTrackInfo = None
 
-        _LOGGER.error(f"Initialized with username: {username}, scooter_id: {scooter_id} and language: {language} and time_zone: {time_zone}")
-
     def initApi(self):
         self.token = self.get_token()
         api_uri = MOTOINFO_LIST_API_URI
@@ -167,6 +165,7 @@ class NiuApi:
         return self.dataTrackInfo["data"][0][id_field]
 
     def updateBat(self):
+        _LOGGER.error(f"Updating with language: {self.language} and time_zone: {self.time_zone}")
         self.dataBat = self.get_info(MOTOR_BATTERY_API_URI)
 
     def updateMoto(self):
