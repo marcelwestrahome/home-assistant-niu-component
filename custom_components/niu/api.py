@@ -81,7 +81,7 @@ class NiuApi:
         headers = {
             "token": self.token,
             "Accept-Language": "en-US",
-            "User-Agent": f"manager/5.9.6 (identifier);deviceName=iPhone;timezone={self.time_zone};model=iPhone16,1;lang={self.language};appVersion=5.9.6;ostype=iOS;clientIdentifier=identifier",
+            "User-Agent": f"manager/5.9.6 (iPhone; iOS 18.5; Scale/3.00);deviceName=iPhone;timezone={self.time_zone};model=iPhone16,1;lang={self.language};appVersion=5.9.6;ostype=iOS;clientIdentifier=Overseas",
         }
 
         params = {"sn": sn}
