@@ -36,13 +36,6 @@ class NiuApi:
         self.updateMotoInfo()
         self.updateTrackInfo()
 
-    def headers(self):
-        return {
-            "token": self.token,
-            "Accept-Language": "en-US",
-            "User-Agent": f"manager/5.9.6 (identifier);deviceName=iPhone;timezone={self.time_zone};model=iPhone16,1;lang={self.language};appVersion=5.9.6;ostype=iOS;clientIdentifier=identifier",
-        }
-
     def get_token(self):
         username = self.username
         password = self.password
@@ -66,8 +59,12 @@ class NiuApi:
 
     def get_vehicles_info(self, path):
         url = API_BASE_URL + path
+        headers = {
+            "token": self.token,
+        }
+
         try:
-            r = requests.get(url, headers=self.headers(), data=[])
+            r = requests.get(url, headers=headers, data=[])
         except ConnectionError:
             return False
         if r.status_code != 200:
@@ -81,10 +78,15 @@ class NiuApi:
     ):
         sn = self.sn
         url = API_BASE_URL + path
+        headers = {
+            "token": self.token,
+            "Accept-Language": "en-US",
+            "User-Agent": f"manager/5.9.6 (identifier);deviceName=iPhone;timezone={self.time_zone};model=iPhone16,1;lang={self.language};appVersion=5.9.6;ostype=iOS;clientIdentifier=identifier",
+        }
 
         params = {"sn": sn}
         try:
-            r = requests.get(url, headers=self.headers(), params=params)
+            r = requests.get(url, headers=headers, params=params)
 
         except ConnectionError:
             return False
@@ -101,9 +103,13 @@ class NiuApi:
     ):
         sn = self.sn
         url = API_BASE_URL + path
+        headers = {
+            "token": self.token,
+            "Accept-Language": "en-US",
+        }
         params = {}
         try:
-            r = requests.post(url, headers=self.headers(), params=params, data={"sn": sn})
+            r = requests.post(url, headers=headers, params=params, data={"sn": sn})
         except ConnectionError:
             return False
         if r.status_code != 200:
@@ -116,11 +122,16 @@ class NiuApi:
     def post_info_track(self, path):
         sn = self.sn
         url = API_BASE_URL + path
+        headers = {
+            "token": self.token,
+            "Accept-Language": "en-US",
+            "User-Agent": "manager/1.0.0 (identifier);clientIdentifier=identifier",
+        }
         params = {}
         try:
             r = requests.post(
                 url,
-                headers=self.headers(),
+                headers=headers,
                 params=params,
                 json={"index": "0", "pagesize": 10, "sn": sn},
             )
@@ -151,16 +162,16 @@ class NiuApi:
     def getDataTrack(self, id_field):
         if id_field == "startTime" or id_field == "endTime":
             return datetime.fromtimestamp(
-                (self.dataTrackInfo["data"]["items"][0][id_field]) / 1000
+                (self.dataTrackInfo["data"][0][id_field]) / 1000
             ).strftime("%Y-%m-%d %H:%M:%S")
         if id_field == "ridingtime":
-            return strftime("%H:%M:%S", gmtime(self.dataTrackInfo["data"]["items"][0][id_field]))
+            return strftime("%H:%M:%S", gmtime(self.dataTrackInfo["data"][0][id_field]))
         if id_field == "track_thumb":
-            thumburl = self.dataTrackInfo["data"]["items"][0][id_field].replace(
+            thumburl = self.dataTrackInfo["data"][0][id_field].replace(
                 "app-api.niucache.com", "app-api-fk.niu.com"
             )
             return thumburl.replace("/track/thumb/", "/track/overseas/thumb/")
-        return self.dataTrackInfo["data"]["items"][0][id_field]
+        return self.dataTrackInfo["data"][0][id_field]
 
     def updateBat(self):
         self.dataBat = self.get_info(MOTOR_BATTERY_API_URI)
