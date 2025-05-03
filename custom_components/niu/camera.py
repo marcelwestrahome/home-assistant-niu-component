@@ -101,6 +101,7 @@ class LastTrackCamera(GenericCamera):
             return self._last_image
         except Exception as err:
             _LOGGER.error("Unknown error getting new camera image from %s: %s\ndata: %s", self._name, err, self._api.dataTrackInfo)
+            return self._last_image
 
         self._last_url = last_track_url
         self._previous_image = self._last_image
