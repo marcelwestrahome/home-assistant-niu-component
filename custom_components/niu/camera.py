@@ -79,14 +79,14 @@ class LastTrackCamera(GenericCamera):
     async def async_camera_image(
         self, width: int | None = None, height: int | None = None
     ) -> bytes | None:
-        get_last_track = lambda: self._api.getDataTrack("track_thumb")
-        last_track_url = await self.hass.async_add_executor_job(get_last_track)
-
-        if last_track_url == self._last_url and self._previous_image != b"":
-            # The path image is the same as before so the image is the same:
-            return self._previous_image
-
         try:
+            get_last_track = lambda: self._api.getDataTrack("track_thumb")
+            last_track_url = await self.hass.async_add_executor_job(get_last_track)
+
+            if last_track_url == self._last_url and self._previous_image != b"":
+                # The path image is the same as before so the image is the same:
+                return self._previous_image
+
             async_client = get_async_client(self.hass, verify_ssl=self.verify_ssl)
             response = await async_client.get(
                 last_track_url, auth=self._auth, timeout=GET_IMAGE_TIMEOUT
@@ -99,6 +99,8 @@ class LastTrackCamera(GenericCamera):
         except (httpx.RequestError, httpx.HTTPStatusError) as err:
             _LOGGER.error("Error getting new camera image from %s: %s", self._name, err)
             return self._last_image
+        except Exception as err:
+            _LOGGER.error("Unknown error getting new camera image from %s: %s\ndata: %s", self._name, err, self._api.dataTrackInfo)
 
         self._last_url = last_track_url
         self._previous_image = self._last_image
