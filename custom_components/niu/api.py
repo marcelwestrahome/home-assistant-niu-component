@@ -1,25 +1,30 @@
 from datetime import datetime, timedelta
 import hashlib
 import json
+import logging
 
-# from homeassistant.util import Throttle
 from time import gmtime, strftime
 
 import requests
 
 from .const import *
 
+_LOGGER = logging.getLogger(__name__)
 
 class NiuApi:
-    def __init__(self, username, password, scooter_id) -> None:
+    def __init__(self, username, password, language, time_zone, scooter_id) -> None:
         self.username = username
         self.password = password
+        self.language = language
+        self.time_zone = time_zone
         self.scooter_id = int(scooter_id)
 
         self.dataBat = None
         self.dataMoto = None
         self.dataMotoInfo = None
         self.dataTrackInfo = None
+
+        _LOGGER.error(f"Initialized with username: {username}, scooter_id: {scooter_id} and language: {language} and time_zone: {time_zone}")
 
     def initApi(self):
         self.token = self.get_token()
@@ -39,7 +44,7 @@ class NiuApi:
         return {
             "token": self.token,
             "Accept-Language": "en-US",
-            "User-Agent": "manager/5.9.6 (iPhone; iOS 18.5; Scale/3.00);deviceName=iPhone;timezone=Pacific/Honolulu;model=iPhone16,1;lang=en-US;ostype=iOS;clientIdentifier=Overseas",
+            "User-Agent": f"manager/5.9.6 (iPhone; iOS 18.5; Scale/3.00);deviceName=iPhone;timezone={self.time_zone};model=iPhone16,1;lang={self.language};appVersion=5.9.6;ostype=iOS;clientIdentifier=Overseas",
         }
 
     def get_token(self):
@@ -172,76 +177,3 @@ class NiuApi:
 
     def updateTrackInfo(self):
         self.dataTrackInfo = self.post_info_track(TRACK_LIST_API_URI)
-
-
-"""class NiuDataBridge(object):
-    async def __init__(self, api):
-    #  hass, username, password, country, scooter_id):
-
-        self.api = api
-        # await hass.async_add_executor_job(lambda : NiuDataBridge(username, password, country, scooter_id))
-        # NiuApi(username, password, country, scooter_id)
-        sn, token = self.api.sn, self.api.token
-
-        self._dataBat = None
-        self._dataMoto = None
-        self._dataMotoInfo = None
-        self._dataTrackInfo = None
-        self._sn = sn
-        self._token = token
-
-    def token(self):
-        return self.api.token
-    
-    def sn(self):
-        return self.api.sn
-
-    def sensor_prefix(self):
-        return self.api.sensor_prefix
-
-    def dataBat(self, id_field):
-        return self._dataBat["data"]["batteries"]["compartmentA"][id_field]
-
-    def dataMoto(self, id_field):
-        return self._dataMoto["data"][id_field]
-
-    def dataDist(self, id_field):
-        return self._dataMoto["data"]["lastTrack"][id_field]
-
-    def dataPos(self, id_field):
-        return self._dataMoto["data"]["postion"][id_field]
-
-    def dataOverall(self, id_field):
-        return self._dataMotoInfo["data"][id_field]
-
-    def dataTrack(self, id_field):
-        if id_field == "startTime" or id_field == "endTime":
-            return datetime.fromtimestamp(
-                (self._dataTrackInfo["data"][0][id_field]) / 1000
-            ).strftime("%Y-%m-%d %H:%M:%S")
-        if id_field == "ridingtime":
-            return strftime(
-                "%H:%M:%S", gmtime(self._dataTrackInfo["data"][0][id_field])
-            )
-        if id_field == "track_thumb":
-            thumburl = self._dataTrackInfo["data"][0][id_field].replace(
-                "app-api.niucache.com", "app-api-fk.niu.com"
-            )
-            return thumburl.replace("/track/thumb/", "/track/overseas/thumb/")
-        return self._dataTrackInfo["data"][0][id_field]
-
-    @Throttle(timedelta(seconds=1))
-    def updateBat(self):
-        self._dataBat = self.api.get_info(MOTOR_BATTERY_API_URI)
-
-    @Throttle(timedelta(seconds=1))
-    def updateMoto(self):
-        self._dataMoto = self.api.get_info(MOTOR_INDEX_API_URI)
-
-    @Throttle(timedelta(seconds=1))
-    def updateMotoInfo(self):
-        self._dataMotoInfo = self.api.post_info(MOTOINFO_ALL_API_URI)
-
-    @Throttle(timedelta(seconds=1))
-    def updateTrackInfo(self):
-        self._dataTrackInfo = self.api.post_info_track(TRACK_LIST_API_URI)"""
