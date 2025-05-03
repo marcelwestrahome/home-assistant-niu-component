@@ -35,6 +35,13 @@ class NiuApi:
         self.updateMotoInfo()
         self.updateTrackInfo()
 
+    def headers(self):
+        return {
+            "token": self.token,
+            "Accept-Language": "en-US",
+            "User-Agent": "manager/5.9.6 (iPhone; iOS 18.5; Scale/3.00);deviceName=iPhone;timezone=Pacific/Honolulu;model=iPhone16,1;lang=en-US;ostype=iOS;clientIdentifier=Overseas",
+        }
+
     def get_token(self):
         username = self.username
         password = self.password
@@ -57,12 +64,9 @@ class NiuApi:
         return data["data"]["token"]["access_token"]
 
     def get_vehicles_info(self, path):
-        token = self.token
-
         url = API_BASE_URL + path
-        headers = {"token": token}
         try:
-            r = requests.get(url, headers=headers, data=[])
+            r = requests.get(url, headers=self.headers(), data=[])
         except ConnectionError:
             return False
         if r.status_code != 200:
@@ -75,16 +79,11 @@ class NiuApi:
         path,
     ):
         sn = self.sn
-        token = self.token
         url = API_BASE_URL + path
 
         params = {"sn": sn}
-        headers = {
-            "token": token,
-            "user-agent": "manager/4.10.4 (android; IN2020 11);clientIdentifier=Domestic;model=IN2020;deviceName=IN2020;ostype=android",
-        }
         try:
-            r = requests.get(url, headers=headers, params=params)
+            r = requests.get(url, headers=self.headers(), params=params)
 
         except ConnectionError:
             return False
@@ -99,12 +98,11 @@ class NiuApi:
         self,
         path,
     ):
-        sn, token = self.sn, self.token
+        sn = self.sn
         url = API_BASE_URL + path
         params = {}
-        headers = {"token": token, "Accept-Language": "en-US"}
         try:
-            r = requests.post(url, headers=headers, params=params, data={"sn": sn})
+            r = requests.post(url, headers=self.headers(), params=params, data={"sn": sn})
         except ConnectionError:
             return False
         if r.status_code != 200:
@@ -115,18 +113,13 @@ class NiuApi:
         return data
 
     def post_info_track(self, path):
-        sn, token = self.sn, self.token
+        sn = self.sn
         url = API_BASE_URL + path
         params = {}
-        headers = {
-            "token": token,
-            "Accept-Language": "en-US",
-            "User-Agent": "manager/1.0.0 (identifier);clientIdentifier=identifier",
-        }
         try:
             r = requests.post(
                 url,
-                headers=headers,
+                headers=self.headers(),
                 params=params,
                 json={"index": "0", "pagesize": 10, "sn": sn},
             )
