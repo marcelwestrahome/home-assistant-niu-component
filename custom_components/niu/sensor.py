@@ -124,15 +124,18 @@ class NiuSensor(Entity):
     def extra_state_attributes(self):
         if self._sensor_grp == SENSOR_TYPE_MOTO and self._id_name == "isConnected":
             return {
-                "bmsId": self._api.getDataBat("bmsId"),
+                "bmsId_a": self._api.getDataBatA("bmsId"),
+                "bmsId_b": self._api.getDataBatB("bmsId"),
                 "latitude": self._api.getDataPos("lat"),
                 "longitude": self._api.getDataPos("lng"),
                 "gsm": self._api.getDataMoto("gsm"),
                 "gps": self._api.getDataMoto("gps"),
                 "time": self._api.getDataDist("time"),
                 "range": self._api.getDataMoto("estimatedMileage"),
-                "battery": self._api.getDataBat("batteryCharging"),
-                "battery_grade": self._api.getDataBat("gradeBattery"),
+                "battery_a": self._api.getDataBatA("batteryCharging"),
+                "battery_b": self._api.getDataBatB("batteryCharging"),
+                "battery_grade_a": self._api.getDataBatA("gradeBattery"),
+                "battery_grade_b": self._api.getDataBatB("gradeBattery"),
                 "centre_ctrl_batt": self._api.getDataMoto("centreCtrlBattery"),
             }
 
@@ -140,7 +143,11 @@ class NiuSensor(Entity):
     async def async_update(self):
         if self._sensor_grp == SENSOR_TYPE_BAT:
             await self._hass.async_add_executor_job(self._api.updateBat)
-            self._state = self._api.getDataBat(self._id_name)
+            self._state = self._api.getDataBatA(self._id_name)
+            
+        if self._sensor_grp == SENSOR_TYPE_BAT2:
+            await self._hass.async_add_executor_job(self._api.updateBat)
+            self._state = self._api.getDataBatB(self._id_name)
 
         elif self._sensor_grp == SENSOR_TYPE_MOTO:
             await self._hass.async_add_executor_job(self._api.updateMoto)

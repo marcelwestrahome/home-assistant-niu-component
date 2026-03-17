@@ -18,6 +18,7 @@ CONF_SENSORS = "sensors_selected"
 DEFAULT_SCOOTER_ID = 0
 
 SENSOR_TYPE_BAT = "BAT"
+SENSOR_TYPE_BAT2 = "BAT2"
 SENSOR_TYPE_MOTO = "MOTO"
 SENSOR_TYPE_DIST = "DIST"
 SENSOR_TYPE_OVERALL = "TOTAL"
@@ -26,12 +27,14 @@ SENSOR_TYPE_POS = "POSITION"
 SENSOR_TYPE_TRACK = "TRACK"
 
 AVAILABLE_SENSORS = [
-    "BatteryCharge",
+    "BatteryChargeA",
+    "BatteryChargeB",
     "Isconnected",
     "TimesCharged",
     "temperatureDesc",
     "Temperature",
-    "BatteryGrade",
+    "BatteryGradeA",
+    "BatteryGradeB",
     "CurrentSpeed",
     "ScooterConnected",
     "IsCharging",
@@ -74,12 +77,14 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
             [
                 vol.In(
                     [
-                        "BatteryCharge",
+                        "BatteryChargeA",
+                        "BatteryChargeB",
                         "Isconnected",
                         "TimesCharged",
                         "temperatureDesc",
                         "Temperature",
-                        "BatteryGrade",
+                        "BatteryGradeA",
+                        "BatteryGradeB",
                         "CurrentSpeed",
                         "ScooterConnected",
                         "IsCharging",
@@ -108,11 +113,19 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 SENSOR_TYPES = {
-    "BatteryCharge": [
-        "battery_charge",
+    "BatteryChargeA": [
+        "battery_charge_a",
         "%",
         "batteryCharging",
         SENSOR_TYPE_BAT,
+        "battery",
+        "mdi:battery-charging-50",
+    ],
+    "BatteryChargeB": [
+        "battery_charge_b",
+        "%",
+        "batteryCharging",
+        SENSOR_TYPE_BAT2,
         "battery",
         "mdi:battery-charging-50",
     ],
@@ -148,11 +161,19 @@ SENSOR_TYPES = {
         "temperature",
         "mdi:thermometer",
     ],
-    "BatteryGrade": [
-        "battery_grade",
+    "BatteryGradeA": [
+        "battery_grade_a",
         "%",
         "gradeBattery",
         SENSOR_TYPE_BAT,
+        "battery",
+        "mdi:car-battery",
+    ],
+    "BatteryGradeB": [
+        "battery_grade_b",
+        "%",
+        "gradeBattery",
+        SENSOR_TYPE_BAT2,
         "battery",
         "mdi:car-battery",
     ],
