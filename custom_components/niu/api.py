@@ -139,8 +139,11 @@ class NiuApi:
             return False
         return data
 
-    def getDataBat(self, id_field): 
+    def getDataBatA(self, id_field): 
         return self.dataBat["data"]["batteries"]["compartmentA"][id_field]
+
+    def getDataBatB(self, id_field): 
+        return self.dataBat["data"]["batteries"]["compartmentB"][id_field]
 
     def getDataMoto(self, id_field):
         return self.dataMoto["data"][id_field]
