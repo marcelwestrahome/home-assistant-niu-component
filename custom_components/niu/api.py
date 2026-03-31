@@ -142,8 +142,17 @@ class NiuApi:
     def getDataBatA(self, id_field): 
         return self.dataBat["data"]["batteries"]["compartmentA"][id_field]
 
-    def getDataBatB(self, id_field): 
-        return self.dataBat["data"]["batteries"]["compartmentB"][id_field]
+    def hasSecondBattery(self):
+        try:
+            return "compartmentB" in self.dataBat["data"]["batteries"]
+        except (KeyError, TypeError):
+            return False
+
+    def getDataBatB(self, id_field):
+        try:
+            return self.dataBat["data"]["batteries"]["compartmentB"][id_field]
+        except (KeyError, TypeError):
+            return None
 
     def getDataMoto(self, id_field):
         return self.dataMoto["data"][id_field]
