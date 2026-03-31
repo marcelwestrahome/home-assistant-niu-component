@@ -191,10 +191,15 @@ class NiuApi:
         if id_field == "ridingtime":
             return strftime("%H:%M:%S", gmtime(self.dataTrackInfo["data"][0][id_field]))
         if id_field == "track_thumb":
-            thumburl = self.dataTrackInfo["data"][0][id_field].replace(
-                "app-api.niucache.com", "app-api-fk.niu.com"
-            )
-            return thumburl.replace("/track/thumb/", "/track/overseas/thumb/")
+            thumburl = self.dataTrackInfo["data"][0][id_field]
+            # Rewrite domestic CDN URLs to overseas; skip if already overseas
+            if "app-api.niucache.com" in thumburl:
+                thumburl = thumburl.replace(
+                    "app-api.niucache.com", "app-api-fk.niu.com"
+                )
+            if "/track/thumb/" in thumburl and "/track/overseas/thumb/" not in thumburl:
+                thumburl = thumburl.replace("/track/thumb/", "/track/overseas/thumb/")
+            return thumburl
         return self.dataTrackInfo["data"][0][id_field]
 
     def updateBat(self):
