@@ -11,15 +11,25 @@ from .const import *
 
 
 class NiuApi:
-    def __init__(self, username, password, scooter_id) -> None:
+    def __init__(self, username, password, scooter_id, language="en-US", timezone="UTC") -> None:
         self.username = username
         self.password = password
         self.scooter_id = int(scooter_id)
+        self.language = language
+        self.timezone = timezone
 
         self.dataBat = None
         self.dataMoto = None
         self.dataMotoInfo = None
         self.dataTrackInfo = None
+
+    @classmethod
+    def from_hass(cls, hass, username, password, scooter_id):
+        """Create NiuApi with locale settings from Home Assistant config."""
+        language = hass.config.language
+        if hass.config.country:
+            language = f"{language}-{hass.config.country}"
+        return cls(username, password, scooter_id, language=language, timezone=str(hass.config.time_zone))
 
     def initApi(self):
         self.token = self.get_token()
@@ -79,9 +89,12 @@ class NiuApi:
         url = API_BASE_URL + path
 
         params = {"sn": sn}
+        is_chinese = self.language.startswith("zh")
+        client_id = "Domestic" if is_chinese else "Overseas"
         headers = {
             "token": token,
-            "user-agent": "manager/4.10.4 (android; IN2020 11);lang=zh-CN;clientIdentifier=Domestic;timezone=Asia/Shanghai;model=IN2020;deviceName=IN2020;ostype=android",
+            "Accept-Language": self.language,
+            "user-agent": f"manager/4.10.4 (android; IN2020 11);lang={self.language};clientIdentifier={client_id};timezone={self.timezone};model=IN2020;deviceName=IN2020;ostype=android",
         }
         try:
             r = requests.get(url, headers=headers, params=params)
@@ -102,7 +115,7 @@ class NiuApi:
         sn, token = self.sn, self.token
         url = API_BASE_URL + path
         params = {}
-        headers = {"token": token, "Accept-Language": "en-US"}
+        headers = {"token": token, "Accept-Language": self.language}
         try:
             r = requests.post(url, headers=headers, params=params, data={"sn": sn})
         except ConnectionError:
@@ -118,10 +131,12 @@ class NiuApi:
         sn, token = self.sn, self.token
         url = API_BASE_URL + path
         params = {}
+        is_chinese = self.language.startswith("zh")
+        client_id = "Domestic" if is_chinese else "Overseas"
         headers = {
             "token": token,
-            "Accept-Language": "en-US",
-            "User-Agent": "manager/1.0.0 (identifier);clientIdentifier=identifier",
+            "Accept-Language": self.language,
+            "User-Agent": f"manager/1.0.0 (identifier);clientIdentifier={client_id}",
         }
         try:
             r = requests.post(
