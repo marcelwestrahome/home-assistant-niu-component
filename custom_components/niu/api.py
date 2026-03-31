@@ -27,7 +27,9 @@ class NiuApi:
     def from_hass(cls, hass, username, password, scooter_id):
         """Create NiuApi with locale settings from Home Assistant config."""
         language = hass.config.language
-        if hass.config.country:
+        # Only append country if language is a bare code (e.g. "en"),
+        # not if it already includes a region (e.g. "en-GB", "zh-Hans")
+        if hass.config.country and "-" not in language:
             language = f"{language}-{hass.config.country}"
         return cls(username, password, scooter_id, language=language, timezone=str(hass.config.time_zone))
 
