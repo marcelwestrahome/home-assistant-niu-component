@@ -254,3 +254,15 @@ SENSOR_TYPES = {
         "mdi:map",
     ],
 }
+
+# Names stored by releases before dual-battery support was introduced. Keep
+# their original entity-id suffixes so existing dashboards and history survive
+# a reload, while reusing the current primary-battery definitions.
+SENSOR_TYPES["BatteryCharge"] = [
+    "battery_charge",
+    *SENSOR_TYPES["BatteryChargeA"][1:],
+]
+SENSOR_TYPES["BatteryGrade"] = [
+    "battery_grade",
+    *SENSOR_TYPES["BatteryGradeA"][1:],
+]

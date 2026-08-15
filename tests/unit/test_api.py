@@ -324,6 +324,21 @@ class NiuApiTest(unittest.TestCase):
 
         self.assertIs(self.api.dataBat, previous_data)
 
+    def test_getters_tolerate_missing_or_malformed_cached_data(self) -> None:
+        """Partial NIU payloads should make entities unavailable, not crash them."""
+        self.api.dataBat = {"data": {"batteries": None}}
+        self.api.dataMoto = {"data": {"lastTrack": None, "postion": None}}
+        self.api.dataMotoInfo = {"data": None}
+        self.api.dataTrackInfo = {"data": []}
+
+        self.assertIsNone(self.api.getDataBatA("batteryCharging"))
+        self.assertIsNone(self.api.getDataBatB("batteryCharging"))
+        self.assertIsNone(self.api.getDataMoto("estimatedMileage"))
+        self.assertIsNone(self.api.getDataDist("distance"))
+        self.assertIsNone(self.api.getDataPos("lat"))
+        self.assertIsNone(self.api.getDataOverall("totalMileage"))
+        self.assertIsNone(self.api.getDataTrack("track_thumb"))
+
 
 if __name__ == "__main__":
     unittest.main()
