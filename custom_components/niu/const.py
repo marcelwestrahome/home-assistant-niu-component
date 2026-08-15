@@ -142,7 +142,7 @@ SENSOR_TYPES = {
         "",
         "isCharging",
         SENSOR_TYPE_MOTO,
-        "power",
+        "none",
         "mdi:battery-charging",
     ],
     "IsLocked": ["is_locked", "", "lockStatus", SENSOR_TYPE_MOTO, "lock", "mdi:lock"],
