@@ -5,13 +5,47 @@
 from datetime import timedelta
 import logging
 
+import voluptuous as vol
+
+from homeassistant.components.sensor import PLATFORM_SCHEMA as SENSOR_PLATFORM_SCHEMA
+from homeassistant.const import CONF_MONITORED_VARIABLES
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
 
 from .api import NiuApi
-from .const import *
+from .const import (
+    AVAILABLE_SENSORS,
+    CONF_AUTH,
+    CONF_PASSWORD,
+    CONF_SCOOTER_ID,
+    CONF_SENSORS,
+    CONF_USERNAME,
+    DEFAULT_SCOOTER_ID,
+    SENSOR_TYPES,
+    SENSOR_TYPE_BAT,
+    SENSOR_TYPE_BAT2,
+    SENSOR_TYPE_DIST,
+    SENSOR_TYPE_MOTO,
+    SENSOR_TYPE_OVERALL,
+    SENSOR_TYPE_POS,
+    SENSOR_TYPE_TRACK,
+)
 
 _LOGGER = logging.getLogger(__name__)
+
+PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
+    {
+        vol.Required(CONF_USERNAME): cv.string,
+        vol.Required(CONF_PASSWORD): cv.string,
+        vol.Optional(CONF_SCOOTER_ID, default=DEFAULT_SCOOTER_ID): cv.positive_int,
+        vol.Optional(CONF_MONITORED_VARIABLES, default=["BatteryCharge"]): vol.All(
+            cv.ensure_list,
+            vol.Length(min=1),
+            [vol.In(AVAILABLE_SENSORS)],
+        ),
+    }
+)
 
 
 async def async_setup_entry(hass, entry, async_add_entities) -> None:
