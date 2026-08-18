@@ -51,6 +51,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     await coordinator.async_config_entry_first_refresh()
 
+    entry_updates = {}
+    if entry.unique_id is None:
+        entry_updates["unique_id"] = str(api.sn)
+    if entry.title == "Niu EScooter Integration":
+        entry_updates["title"] = f"NIU – {api.sensor_prefix}"
+    if entry_updates:
+        hass.config_entries.async_update_entry(entry, **entry_updates)
+
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(
         entry, _get_platforms(sensors_selected)
