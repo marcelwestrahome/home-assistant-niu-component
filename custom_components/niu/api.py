@@ -98,6 +98,8 @@ class NiuApi:
         self.dataMoto = None
         self.dataMotoInfo = None
         self.dataTrackInfo = None
+        self.sn = None
+        self.sensor_prefix = ""
 
     @classmethod
     def from_hass(cls, hass, username, password, scooter_id):
@@ -116,6 +118,15 @@ class NiuApi:
         )
 
     def initApi(self):
+        """Initialize vehicle metadata and fetch all legacy data groups."""
+        self.initialize()
+        self.updateBat()
+        self.updateMoto()
+        self.updateMotoInfo()
+        self.updateTrackInfo()
+
+    def initialize(self):
+        """Authenticate and load vehicle metadata without polling entity data."""
         self.get_token()
         vehicles = self.get_vehicles_info(MOTOINFO_LIST_API_URI)
         try:
@@ -124,10 +135,6 @@ class NiuApi:
             self.sensor_prefix = vehicle["scooter_name"]
         except (IndexError, KeyError, TypeError) as err:
             raise NiuResponseError("NIU vehicle list has an unexpected format") from err
-        self.updateBat()
-        self.updateMoto()
-        self.updateMotoInfo()
-        self.updateTrackInfo()
 
     def get_token(self):
         """Authenticate with username and password and return an access token."""
@@ -366,7 +373,10 @@ class NiuApi:
         )
 
     def getDataBatA(self, id_field):
-        return self.dataBat["data"]["batteries"]["compartmentA"][id_field]
+        try:
+            return self.dataBat["data"]["batteries"]["compartmentA"][id_field]
+        except (KeyError, TypeError):
+            return None
 
     def hasSecondBattery(self):
         try:
@@ -381,26 +391,51 @@ class NiuApi:
             return None
 
     def getDataMoto(self, id_field):
-        return self.dataMoto["data"][id_field]
+        try:
+            return self.dataMoto["data"][id_field]
+        except (KeyError, TypeError):
+            return None
 
     def getDataDist(self, id_field):
-        return self.dataMoto["data"]["lastTrack"][id_field]
+        try:
+            return self.dataMoto["data"]["lastTrack"][id_field]
+        except (KeyError, TypeError):
+            return None
 
     def getDataPos(self, id_field):
-        return self.dataMoto["data"]["postion"][id_field]
+        try:
+            return self.dataMoto["data"]["postion"][id_field]
+        except (KeyError, TypeError):
+            return None
 
     def getDataOverall(self, id_field):
-        return self.dataMotoInfo["data"][id_field]
+        try:
+            return self.dataMotoInfo["data"][id_field]
+        except (KeyError, TypeError):
+            return None
 
     def getDataTrack(self, id_field):
-        if id_field == "startTime" or id_field == "endTime":
-            return datetime.fromtimestamp(
-                (self.dataTrackInfo["data"][0][id_field]) / 1000
-            ).strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            value = self.dataTrackInfo["data"][0][id_field]
+        except (IndexError, KeyError, TypeError):
+            return None
+
+        if id_field in ("startTime", "endTime"):
+            try:
+                return datetime.fromtimestamp(value / 1000).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            except (OSError, TypeError, ValueError):
+                return None
         if id_field == "ridingtime":
-            return strftime("%H:%M:%S", gmtime(self.dataTrackInfo["data"][0][id_field]))
+            try:
+                return strftime("%H:%M:%S", gmtime(value))
+            except (OSError, TypeError, ValueError):
+                return None
         if id_field == "track_thumb":
-            thumburl = self.dataTrackInfo["data"][0][id_field]
+            if not isinstance(value, str):
+                return None
+            thumburl = value
             # Rewrite domestic CDN URLs to overseas; skip if already overseas
             if "app-api.niucache.com" in thumburl:
                 thumburl = thumburl.replace(
@@ -409,89 +444,24 @@ class NiuApi:
             if "/track/thumb/" in thumburl and "/track/overseas/thumb/" not in thumburl:
                 thumburl = thumburl.replace("/track/thumb/", "/track/overseas/thumb/")
             return thumburl
-        return self.dataTrackInfo["data"][0][id_field]
+        return value
 
     def updateBat(self):
-        self.dataBat = self.get_info(MOTOR_BATTERY_API_URI)
+        result = self.get_info(MOTOR_BATTERY_API_URI)
+        if result is not None:
+            self.dataBat = result
 
     def updateMoto(self):
-        self.dataMoto = self.get_info(MOTOR_INDEX_API_URI)
+        result = self.get_info(MOTOR_INDEX_API_URI)
+        if result is not None:
+            self.dataMoto = result
 
     def updateMotoInfo(self):
-        self.dataMotoInfo = self.post_info(MOTOINFO_ALL_API_URI)
+        result = self.post_info(MOTOINFO_ALL_API_URI)
+        if result is not None:
+            self.dataMotoInfo = result
 
     def updateTrackInfo(self):
-        self.dataTrackInfo = self.post_info_track(TRACK_LIST_API_URI)
-
-
-"""class NiuDataBridge(object):
-    async def __init__(self, api):
-    #  hass, username, password, country, scooter_id):
-
-        self.api = api
-        # await hass.async_add_executor_job(lambda : NiuDataBridge(username, password, country, scooter_id))
-        # NiuApi(username, password, country, scooter_id)
-        sn, token = self.api.sn, self.api.token
-
-        self._dataBat = None
-        self._dataMoto = None
-        self._dataMotoInfo = None
-        self._dataTrackInfo = None
-        self._sn = sn
-        self._token = token
-
-    def token(self):
-        return self.api.token
-    
-    def sn(self):
-        return self.api.sn
-
-    def sensor_prefix(self):
-        return self.api.sensor_prefix
-
-    def dataBat(self, id_field):
-        return self._dataBat["data"]["batteries"]["compartmentA"][id_field]
-
-    def dataMoto(self, id_field):
-        return self._dataMoto["data"][id_field]
-
-    def dataDist(self, id_field):
-        return self._dataMoto["data"]["lastTrack"][id_field]
-
-    def dataPos(self, id_field):
-        return self._dataMoto["data"]["postion"][id_field]
-
-    def dataOverall(self, id_field):
-        return self._dataMotoInfo["data"][id_field]
-
-    def dataTrack(self, id_field):
-        if id_field == "startTime" or id_field == "endTime":
-            return datetime.fromtimestamp(
-                (self._dataTrackInfo["data"][0][id_field]) / 1000
-            ).strftime("%Y-%m-%d %H:%M:%S")
-        if id_field == "ridingtime":
-            return strftime(
-                "%H:%M:%S", gmtime(self._dataTrackInfo["data"][0][id_field])
-            )
-        if id_field == "track_thumb":
-            thumburl = self._dataTrackInfo["data"][0][id_field].replace(
-                "app-api.niucache.com", "app-api-fk.niu.com"
-            )
-            return thumburl.replace("/track/thumb/", "/track/overseas/thumb/")
-        return self._dataTrackInfo["data"][0][id_field]
-
-    @Throttle(timedelta(seconds=1))
-    def updateBat(self):
-        self._dataBat = self.api.get_info(MOTOR_BATTERY_API_URI)
-
-    @Throttle(timedelta(seconds=1))
-    def updateMoto(self):
-        self._dataMoto = self.api.get_info(MOTOR_INDEX_API_URI)
-
-    @Throttle(timedelta(seconds=1))
-    def updateMotoInfo(self):
-        self._dataMotoInfo = self.api.post_info(MOTOINFO_ALL_API_URI)
-
-    @Throttle(timedelta(seconds=1))
-    def updateTrackInfo(self):
-        self._dataTrackInfo = self.api.post_info_track(TRACK_LIST_API_URI)"""
+        result = self.post_info_track(TRACK_LIST_API_URI)
+        if result is not None:
+            self.dataTrackInfo = result

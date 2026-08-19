@@ -1,28 +1,13 @@
-"""
-    Support for Niu Scooters by Marcel Westra.
-    Asynchronous version implementation by Giovanni P. (@pikka97)
-"""
-from datetime import timedelta
-import logging
+"""Sensor entities for NIU scooters."""
 
-import voluptuous as vol
+from __future__ import annotations
 
-from homeassistant.components.sensor import PLATFORM_SCHEMA as SENSOR_PLATFORM_SCHEMA
-from homeassistant.const import CONF_MONITORED_VARIABLES
-import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.entity import Entity
-from homeassistant.util import Throttle
+from homeassistant.components.sensor import SensorEntity
 
-from .api import NiuApi
 from .const import (
-    AVAILABLE_SENSORS,
     CONF_AUTH,
-    CONF_PASSWORD,
-    CONF_SCOOTER_ID,
     CONF_SENSORS,
-    CONF_USERNAME,
-    DEFAULT_SCOOTER_ID,
-    SENSOR_TYPES,
+    DOMAIN,
     SENSOR_TYPE_BAT,
     SENSOR_TYPE_BAT2,
     SENSOR_TYPE_DIST,
@@ -30,178 +15,106 @@ from .const import (
     SENSOR_TYPE_OVERALL,
     SENSOR_TYPE_POS,
     SENSOR_TYPE_TRACK,
+    SENSOR_TYPES,
 )
-
-_LOGGER = logging.getLogger(__name__)
-
-PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
-    {
-        vol.Required(CONF_USERNAME): cv.string,
-        vol.Required(CONF_PASSWORD): cv.string,
-        vol.Optional(CONF_SCOOTER_ID, default=DEFAULT_SCOOTER_ID): cv.positive_int,
-        vol.Optional(CONF_MONITORED_VARIABLES, default=["BatteryCharge"]): vol.All(
-            cv.ensure_list,
-            vol.Length(min=1),
-            [vol.In(AVAILABLE_SENSORS)],
-        ),
-    }
-)
+from .coordinator import NiuDataUpdateCoordinator
+from .entity import NiuCoordinatorEntity
 
 
 async def async_setup_entry(hass, entry, async_add_entities) -> None:
-    niu_auth = entry.data.get(CONF_AUTH, None)
-    if niu_auth == None:
-        _LOGGER.error(
-            "The authenticator of your Niu integration is None.. can not setup the integration..."
-        )
-        return False
+    """Set up NIU sensors from a config entry."""
+    coordinator: NiuDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    sensors_selected = entry.data[CONF_AUTH][CONF_SENSORS]
 
-    username = niu_auth[CONF_USERNAME]
-    password = niu_auth[CONF_PASSWORD]
-    scooter_id = niu_auth[CONF_SCOOTER_ID]
-    sensors_selected = niu_auth[CONF_SENSORS]
-
-    api = NiuApi.from_hass(hass, username, password, scooter_id)
-    await hass.async_add_executor_job(api.initApi)
-
-    # add sensors
-    devices = []
+    entities = []
     for sensor in sensors_selected:
-        if sensor != "LastTrackThumb":
-            sensor_config = SENSOR_TYPES[sensor]
-            devices.append(
-                NiuSensor(
-                    hass,
-                    api,
-                    sensor,
-                    sensor_config[0],
-                    sensor_config[1],
-                    sensor_config[2],
-                    sensor_config[3],
-                    api.sensor_prefix,
-                    sensor_config[4],
-                    api.sn,
-                    sensor_config[5],
-                )
+        if sensor == "LastTrackThumb" or sensor not in SENSOR_TYPES:
+            continue
+        sensor_config = SENSOR_TYPES[sensor]
+        entities.append(
+            NiuSensor(
+                coordinator,
+                sensor,
+                sensor_config[0],
+                sensor_config[1],
+                sensor_config[2],
+                sensor_config[3],
+                sensor_config[4],
+                sensor_config[5],
             )
-        else:
-            # Last Track Thumb sensor will be used as camera... now just skip it
-            pass
+        )
 
-    async_add_entities(devices)
-    return True
+    async_add_entities(entities)
 
 
-class NiuSensor(Entity):
+class NiuSensor(NiuCoordinatorEntity, SensorEntity):
+    """A NIU sensor backed by the config entry's shared coordinator."""
+
     def __init__(
         self,
-        hass,
-        api: NiuApi,
-        name,
-        sensor_id,
-        uom,
-        id_name,
-        sensor_grp,
-        sensor_prefix,
-        device_class,
-        sn,
-        icon,
-    ):
-        self._unique_id = "sensor.niu_scooter_" + sn + "_" + sensor_id
-        self._name = (
-            "NIU Scooter " + sensor_prefix + " " + name
-        )  # Scooter name as sensor prefix
-        self._hass = hass
-        self._uom = uom
+        coordinator: NiuDataUpdateCoordinator,
+        name: str,
+        sensor_id: str,
+        unit: str,
+        data_field: str,
+        sensor_group: str,
+        device_class: str,
+        icon: str,
+    ) -> None:
+        NiuCoordinatorEntity.__init__(self, coordinator)
+        api = coordinator.data
         self._api = api
-        self._device_class = device_class
-        self._id_name = id_name  # info field for parsing the URL
-        self._sensor_grp = sensor_grp  # info field for choosing the right URL
-        self._icon = icon
-        self._state = 0
+        self._data_field = data_field
+        self._sensor_group = sensor_group
+        self._attr_unique_id = f"sensor.niu_scooter_{api.sn}_{sensor_id}"
+        self._attr_name = f"NIU Scooter {api.sensor_prefix} {name}"
+        self._attr_native_unit_of_measurement = unit or None
+        self._attr_device_class = device_class if device_class != "none" else None
+        self._attr_icon = icon
 
     @property
-    def unique_id(self):
-        return self._unique_id
+    def native_value(self):
+        """Return a value from the coordinator's cached API response."""
+        if self._sensor_group == SENSOR_TYPE_BAT:
+            return self._api.getDataBatA(self._data_field)
+        if self._sensor_group == SENSOR_TYPE_BAT2:
+            return self._api.getDataBatB(self._data_field)
+        if self._sensor_group == SENSOR_TYPE_MOTO:
+            return self._api.getDataMoto(self._data_field)
+        if self._sensor_group == SENSOR_TYPE_POS:
+            return self._api.getDataPos(self._data_field)
+        if self._sensor_group == SENSOR_TYPE_DIST:
+            return self._api.getDataDist(self._data_field)
+        if self._sensor_group == SENSOR_TYPE_OVERALL:
+            return self._api.getDataOverall(self._data_field)
+        if self._sensor_group == SENSOR_TYPE_TRACK:
+            return self._api.getDataTrack(self._data_field)
+        return None
 
     @property
-    def name(self):
-        return self._name
+    def extra_state_attributes(self) -> dict | None:
+        """Return diagnostic attributes for the connection sensor."""
+        if self._sensor_group != SENSOR_TYPE_MOTO or self._data_field != "isConnected":
+            return None
 
-    @property
-    def unit_of_measurement(self):
-        return self._uom
-
-    @property
-    def icon(self):
-        return self._icon
-
-    @property
-    def state(self):
-        return self._state
-
-    @property
-    def device_class(self):
-        return self._device_class
-
-    @property
-    def device_info(self):
-        device_name = "Niu E-scooter"
-        return {
-            "identifiers": {("niu", device_name)},
-            "name": device_name,
-            "manufacturer": "Niu",
-            "model": 1.0,
+        attributes = {
+            "bmsId_a": self._api.getDataBatA("bmsId"),
+            "latitude": self._api.getDataPos("lat"),
+            "longitude": self._api.getDataPos("lng"),
+            "gsm": self._api.getDataMoto("gsm"),
+            "gps": self._api.getDataMoto("gps"),
+            "time": self._api.getDataDist("time"),
+            "range": self._api.getDataMoto("estimatedMileage"),
+            "battery_a": self._api.getDataBatA("batteryCharging"),
+            "battery_grade_a": self._api.getDataBatA("gradeBattery"),
+            "centre_ctrl_batt": self._api.getDataMoto("centreCtrlBattery"),
         }
-
-    @property
-    def extra_state_attributes(self):
-        if self._sensor_grp == SENSOR_TYPE_MOTO and self._id_name == "isConnected":
-            attrs = {
-                "bmsId_a": self._api.getDataBatA("bmsId"),
-                "latitude": self._api.getDataPos("lat"),
-                "longitude": self._api.getDataPos("lng"),
-                "gsm": self._api.getDataMoto("gsm"),
-                "gps": self._api.getDataMoto("gps"),
-                "time": self._api.getDataDist("time"),
-                "range": self._api.getDataMoto("estimatedMileage"),
-                "battery_a": self._api.getDataBatA("batteryCharging"),
-                "battery_grade_a": self._api.getDataBatA("gradeBattery"),
-                "centre_ctrl_batt": self._api.getDataMoto("centreCtrlBattery"),
-            }
-            if self._api.hasSecondBattery():
-                attrs["bmsId_b"] = self._api.getDataBatB("bmsId")
-                attrs["battery_b"] = self._api.getDataBatB("batteryCharging")
-                attrs["battery_grade_b"] = self._api.getDataBatB("gradeBattery")
-            return attrs
-
-    @Throttle(timedelta(minutes=15))
-    async def async_update(self):
-        if self._sensor_grp == SENSOR_TYPE_BAT:
-            await self._hass.async_add_executor_job(self._api.updateBat)
-            self._state = self._api.getDataBatA(self._id_name)
-            
-        if self._sensor_grp == SENSOR_TYPE_BAT2:
-            await self._hass.async_add_executor_job(self._api.updateBat)
-            if self._api.hasSecondBattery():
-                self._state = self._api.getDataBatB(self._id_name)
-
-        elif self._sensor_grp == SENSOR_TYPE_MOTO:
-            await self._hass.async_add_executor_job(self._api.updateMoto)
-            self._state = self._api.getDataMoto(self._id_name)
-
-        elif self._sensor_grp == SENSOR_TYPE_POS:
-            await self._hass.async_add_executor_job(self._api.updateMoto)
-            self._state = self._api.getDataPos(self._id_name)
-
-        elif self._sensor_grp == SENSOR_TYPE_DIST:
-            await self._hass.async_add_executor_job(self._api.updateBat)
-            self._state = self._api.getDataDist(self._id_name)
-
-        elif self._sensor_grp == SENSOR_TYPE_OVERALL:
-            await self._hass.async_add_executor_job(self._api.updateMotoInfo)
-            self._state = self._api.getDataOverall(self._id_name)
-
-        elif self._sensor_grp == SENSOR_TYPE_TRACK:
-            await self._hass.async_add_executor_job(self._api.updateTrackInfo)
-            self._state = self._api.getDataTrack(self._id_name)
+        if self._api.hasSecondBattery():
+            attributes.update(
+                {
+                    "bmsId_b": self._api.getDataBatB("bmsId"),
+                    "battery_b": self._api.getDataBatB("batteryCharging"),
+                    "battery_grade_b": self._api.getDataBatB("gradeBattery"),
+                }
+            )
+        return attributes

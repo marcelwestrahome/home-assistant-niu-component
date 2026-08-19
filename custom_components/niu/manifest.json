@@ -1,7 +1,7 @@
 {
   "domain": "niu",
   "name": "Niu Scooters",
-  "after_dependencies": ["generic"],
+  "after_dependencies": [],
   "codeowners": [
     "@mwestra",
     "@pikka97"
