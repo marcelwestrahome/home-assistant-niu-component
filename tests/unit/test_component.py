@@ -61,12 +61,29 @@ class FakeConfigEntries:
         return True
 
 
+class FakeDeviceRegistry:
+    """Record legacy device identifier migrations."""
+
+    def __init__(self, legacy_device=None) -> None:
+        self.legacy_device = legacy_device
+        self.updated: list[tuple[str, dict]] = []
+
+    def async_get_device_by_identifier(self, identifier, config_entry_id):
+        if identifier == ("niu", "Niu E-scooter"):
+            return self.legacy_device
+        return None
+
+    def async_update_device(self, device_id, **changes) -> None:
+        self.updated.append((device_id, changes))
+
+
 class FakeHass:
     """Home Assistant subset used during config-entry setup."""
 
     def __init__(self) -> None:
         self.data = {}
         self.config_entries = FakeConfigEntries()
+        self.device_registry = FakeDeviceRegistry()
         self.config = types.SimpleNamespace(
             language="de",
             country="AT",
@@ -154,6 +171,38 @@ class ComponentTest(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(await self.component.async_setup_entry(hass, entry))
 
         self.assertEqual(hass.config_entries.updated, [])
+
+    async def test_setup_migrates_legacy_device_to_vehicle_serial(self) -> None:
+        """The old shared identifier should become the selected vehicle serial."""
+        auth = {
+            self.const.CONF_USERNAME: "user@example.com",
+            self.const.CONF_PASSWORD: "secret",
+            self.const.CONF_SCOOTER_ID: 0,
+            self.const.CONF_SENSORS: ["BatteryChargeA"],
+        }
+        entry = types.SimpleNamespace(
+            entry_id="entry-1",
+            data={self.const.CONF_AUTH: auth},
+            unique_id="TEST-SN",
+            title="Electric moped",
+        )
+        hass = FakeHass()
+        hass.device_registry.legacy_device = types.SimpleNamespace(id="legacy-device")
+
+        with patch.object(
+            self.component.NiuApi, "from_hass", return_value=FakeApi()
+        ):
+            self.assertTrue(await self.component.async_setup_entry(hass, entry))
+
+        self.assertEqual(
+            hass.device_registry.updated,
+            [
+                (
+                    "legacy-device",
+                    {"new_identifiers": {(self.const.DOMAIN, "TEST-SN")}},
+                )
+            ],
+        )
 
 
 if __name__ == "__main__":
