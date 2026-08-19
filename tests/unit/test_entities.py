@@ -154,6 +154,26 @@ class EntityTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(entities[0].native_value, 81)
 
+    def test_is_charging_keeps_identity_without_power_device_class(self) -> None:
+        """A boolean charging state must not claim to be power measured in watts."""
+        sensor_config = self.const.SENSOR_TYPES["IsCharging"]
+        sensor = self.sensor_module.NiuSensor(
+            self.coordinator,
+            "IsCharging",
+            sensor_config[0],
+            sensor_config[1],
+            sensor_config[2],
+            sensor_config[3],
+            sensor_config[4],
+            sensor_config[5],
+        )
+
+        self.assertEqual(
+            sensor._attr_unique_id, "sensor.niu_scooter_TEST-SN_is_charging"
+        )
+        self.assertIsNone(sensor._attr_device_class)
+        self.assertIsNone(sensor._attr_native_unit_of_measurement)
+
     async def test_camera_uses_plain_camera_and_caches_unchanged_url(self) -> None:
         """The NIU camera should download a thumbnail only when its URL changes."""
         self.api.getDataTrack = Mock(return_value="https://example.test/track.jpg")
