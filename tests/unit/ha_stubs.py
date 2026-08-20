@@ -97,6 +97,13 @@ class Camera:
 
     def __init__(self) -> None:
         self.hass = None
+        self._attr_is_on = True
+        self.content_type = "image/jpeg"
+
+    @property
+    def is_on(self) -> bool:
+        """Mirror Home Assistant's default camera power state."""
+        return self._attr_is_on
 
 
 class TimeoutException(Exception):
