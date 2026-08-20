@@ -6,6 +6,36 @@ import sys
 import types
 
 
+class ConfigFlow:
+    """Small stand-in for Home Assistant's config-flow base class."""
+
+    def __init_subclass__(cls, *, domain=None, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+        cls.DOMAIN = domain
+
+    async def async_set_unique_id(self, unique_id: str) -> None:
+        self.unique_id = unique_id
+
+    def _abort_if_unique_id_configured(self) -> None:
+        if self.unique_id in getattr(self.hass, "configured_unique_ids", set()):
+            raise AbortFlow("already_configured")
+
+    def async_create_entry(self, *, title, data):
+        return {"type": "create_entry", "title": title, "data": data}
+
+    def async_show_form(self, *, step_id, data_schema, errors):
+        return {
+            "type": "form",
+            "step_id": step_id,
+            "data_schema": data_schema,
+            "errors": errors,
+        }
+
+
+class AbortFlow(Exception):
+    """Signal that a config flow should abort."""
+
+
 class DeviceInfo(dict):
     """Small stand-in for Home Assistant's DeviceInfo mapping."""
 
@@ -97,7 +127,9 @@ def install_homeassistant_stubs() -> None:
     sensor.SensorEntity = SensorEntity
 
     config_entries = types.ModuleType("homeassistant.config_entries")
+    config_entries.ConfigFlow = ConfigFlow
     config_entries.ConfigEntry = type("ConfigEntry", (), {})
+    config_entries.ConfigFlowResult = dict
     core = types.ModuleType("homeassistant.core")
     core.HomeAssistant = type("HomeAssistant", (), {})
 
@@ -107,6 +139,20 @@ def install_homeassistant_stubs() -> None:
     device_registry.DeviceInfo = DeviceInfo
     httpx_client = types.ModuleType("homeassistant.helpers.httpx_client")
     httpx_client.get_async_client = lambda hass, verify_ssl=True: None
+    selector = types.ModuleType("homeassistant.helpers.selector")
+
+    class SelectSelectorMode:
+        LIST = "list"
+
+    class TextSelectorType:
+        PASSWORD = "password"
+
+    selector.SelectSelector = lambda config: config
+    selector.SelectSelectorConfig = lambda **kwargs: kwargs
+    selector.SelectSelectorMode = SelectSelectorMode
+    selector.TextSelector = lambda config: config
+    selector.TextSelectorConfig = lambda **kwargs: kwargs
+    selector.TextSelectorType = TextSelectorType
     update_coordinator = types.ModuleType("homeassistant.helpers.update_coordinator")
     update_coordinator.CoordinatorEntity = CoordinatorEntity
     update_coordinator.DataUpdateCoordinator = DataUpdateCoordinator
@@ -122,9 +168,22 @@ def install_homeassistant_stubs() -> None:
         "homeassistant.helpers": helpers,
         "homeassistant.helpers.device_registry": device_registry,
         "homeassistant.helpers.httpx_client": httpx_client,
+        "homeassistant.helpers.selector": selector,
         "homeassistant.helpers.update_coordinator": update_coordinator,
     }
     sys.modules.update(modules)
+
+    voluptuous = types.ModuleType("voluptuous")
+    voluptuous.Schema = lambda schema: schema
+    voluptuous.Required = lambda key, **kwargs: key
+    voluptuous.All = lambda *validators: validators
+    voluptuous.Coerce = lambda target: target
+    voluptuous.Range = lambda **kwargs: kwargs
+    sys.modules["voluptuous"] = voluptuous
+
+    requests = types.ModuleType("requests")
+    requests.exceptions = types.SimpleNamespace(RequestException=Exception)
+    sys.modules["requests"] = requests
 
     httpx = types.ModuleType("httpx")
     httpx.TimeoutException = TimeoutException

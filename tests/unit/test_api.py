@@ -339,6 +339,28 @@ class NiuApiTest(unittest.TestCase):
         self.assertIsNone(self.api.getDataOverall("totalMileage"))
         self.assertIsNone(self.api.getDataTrack("track_thumb"))
 
+    def test_initialize_rejects_invalid_vehicle_index(self) -> None:
+        """Invalid indexes must not silently select another NIU vehicle."""
+        api_module.requests.post.return_value = token_response("access")
+        api_module.requests.get.return_value = FakeResponse(
+            200,
+            {
+                "status": 0,
+                "data": {
+                    "items": [
+                        {"sn_id": "FIRST", "scooter_name": "First"},
+                        {"sn_id": "LAST", "scooter_name": "Last"},
+                    ]
+                },
+            },
+        )
+
+        for scooter_id in (-1, 2):
+            with self.subTest(scooter_id=scooter_id):
+                self.api.scooter_id = scooter_id
+                with self.assertRaises(api_module.NiuVehicleNotFoundError):
+                    self.api.initialize()
+
 
 if __name__ == "__main__":
     unittest.main()

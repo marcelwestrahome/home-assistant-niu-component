@@ -73,6 +73,14 @@ class NiuResponseError(NiuApiError):
         self.niu_status = niu_status
 
 
+class NiuVehicleNotFoundError(NiuApiError):
+    """The selected vehicle index does not exist in the NIU account."""
+
+    def __init__(self, scooter_id: int) -> None:
+        super().__init__(f"NIU vehicle index {scooter_id} does not exist")
+        self.scooter_id = scooter_id
+
+
 class NiuApi:
     def __init__(
         self,
@@ -117,24 +125,31 @@ class NiuApi:
             timezone=str(hass.config.time_zone),
         )
 
-    def initApi(self):
-        """Initialize vehicle metadata and fetch all legacy data groups."""
-        self.initialize()
-        self.updateBat()
-        self.updateMoto()
-        self.updateMotoInfo()
-        self.updateTrackInfo()
-
     def initialize(self):
         """Authenticate and load vehicle metadata without polling entity data."""
         self.get_token()
         vehicles = self.get_vehicles_info(MOTOINFO_LIST_API_URI)
         try:
-            vehicle = vehicles["data"]["items"][self.scooter_id]
-            self.sn = vehicle["sn_id"]
-            self.sensor_prefix = vehicle["scooter_name"]
-        except (IndexError, KeyError, TypeError) as err:
+            items = vehicles["data"]["items"]
+        except (KeyError, TypeError) as err:
             raise NiuResponseError("NIU vehicle list has an unexpected format") from err
+
+        if not isinstance(items, list):
+            raise NiuResponseError("NIU vehicle list has an unexpected format")
+        if self.scooter_id < 0 or self.scooter_id >= len(items):
+            raise NiuVehicleNotFoundError(self.scooter_id)
+
+        try:
+            vehicle = items[self.scooter_id]
+            sn = vehicle["sn_id"]
+            scooter_name = vehicle["scooter_name"]
+        except (KeyError, TypeError) as err:
+            raise NiuResponseError("NIU vehicle list has an unexpected format") from err
+        if not sn or not scooter_name:
+            raise NiuResponseError("NIU vehicle list has an unexpected format")
+
+        self.sn = str(sn)
+        self.sensor_prefix = str(scooter_name)
 
     def get_token(self):
         """Authenticate with username and password and return an access token."""

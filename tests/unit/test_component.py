@@ -46,6 +46,12 @@ class FakeConfigEntries:
     def __init__(self) -> None:
         self.forwarded: list[tuple[str, ...]] = []
         self.unloaded: list[tuple[str, ...]] = []
+        self.updated: list[dict[str, str]] = []
+
+    def async_update_entry(self, entry, **changes) -> None:
+        self.updated.append(changes)
+        for key, value in changes.items():
+            setattr(entry, key, value)
 
     async def async_forward_entry_setups(self, entry, platforms) -> None:
         self.forwarded.append(tuple(platforms))
@@ -93,7 +99,10 @@ class ComponentTest(unittest.IsolatedAsyncioTestCase):
             self.const.CONF_SENSORS: ["BatteryChargeA", "LastTrackThumb"],
         }
         entry = types.SimpleNamespace(
-            entry_id="entry-1", data={self.const.CONF_AUTH: auth}
+            entry_id="entry-1",
+            data={self.const.CONF_AUTH: auth},
+            unique_id=None,
+            title="Niu EScooter Integration",
         )
         hass = FakeHass()
         first_api = FakeApi()
@@ -118,6 +127,33 @@ class ComponentTest(unittest.IsolatedAsyncioTestCase):
             [("sensor", "camera"), ("sensor", "camera")],
         )
         self.assertEqual(hass.config_entries.unloaded, [("sensor", "camera")])
+        self.assertEqual(
+            hass.config_entries.updated,
+            [{"unique_id": "TEST-SN", "title": "NIU – MQi"}],
+        )
+
+    async def test_setup_preserves_existing_metadata(self) -> None:
+        """Setup must not overwrite an existing unique ID or a custom title."""
+        auth = {
+            self.const.CONF_USERNAME: "user@example.com",
+            self.const.CONF_PASSWORD: "secret",
+            self.const.CONF_SCOOTER_ID: 0,
+            self.const.CONF_SENSORS: ["BatteryChargeA"],
+        }
+        entry = types.SimpleNamespace(
+            entry_id="entry-1",
+            data={self.const.CONF_AUTH: auth},
+            unique_id="EXISTING-SN",
+            title="My Scooter",
+        )
+        hass = FakeHass()
+
+        with patch.object(
+            self.component.NiuApi, "from_hass", return_value=FakeApi()
+        ):
+            self.assertTrue(await self.component.async_setup_entry(hass, entry))
+
+        self.assertEqual(hass.config_entries.updated, [])
 
 
 if __name__ == "__main__":
