@@ -346,22 +346,27 @@ class NiuApi:
             )
         return payload
 
+    def _locale_headers(self) -> dict[str, str]:
+        """Build the locale-aware headers shared by the GET endpoints."""
+        is_chinese = self.language.startswith("zh")
+        client_id = "Domestic" if is_chinese else "Overseas"
+        return {
+            "Accept-Language": self.language,
+            "user-agent": f"manager/4.10.4 (android; IN2020 11);lang={self.language};clientIdentifier={client_id};timezone={self.timezone};model=IN2020;deviceName=IN2020;ostype=android",
+        }
+
     def get_vehicles_info(self, path):
-        return self._authenticated_request("GET", path)
+        return self._authenticated_request(
+            "GET", path, headers=self._locale_headers()
+        )
 
     def get_info(
         self,
         path,
     ):
         params = {"sn": self.sn}
-        is_chinese = self.language.startswith("zh")
-        client_id = "Domestic" if is_chinese else "Overseas"
-        headers = {
-            "Accept-Language": self.language,
-            "user-agent": f"manager/4.10.4 (android; IN2020 11);lang={self.language};clientIdentifier={client_id};timezone={self.timezone};model=IN2020;deviceName=IN2020;ostype=android",
-        }
         return self._authenticated_request(
-            "GET", path, headers=headers, params=params
+            "GET", path, headers=self._locale_headers(), params=params
         )
 
     def post_info(

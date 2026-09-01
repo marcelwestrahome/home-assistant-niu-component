@@ -361,6 +361,35 @@ class NiuApiTest(unittest.TestCase):
                 with self.assertRaises(api_module.NiuVehicleNotFoundError):
                     self.api.initialize()
 
+    def test_get_vehicles_info_sends_overseas_locale_headers(self) -> None:
+        """The vehicle list request must carry the caller's locale."""
+        self.set_authenticated()
+        api_module.requests.get.return_value = data_response()
+
+        with patch.object(api_module, "monotonic", return_value=0):
+            self.api.get_vehicles_info(api_module.MOTOINFO_LIST_API_URI)
+
+        headers = api_module.requests.get.call_args.kwargs["headers"]
+        self.assertEqual(headers["Accept-Language"], "en-US")
+        self.assertIn("clientIdentifier=Overseas", headers["user-agent"])
+        self.assertIn("lang=en-US", headers["user-agent"])
+
+    def test_get_vehicles_info_sends_domestic_identifier_for_chinese(self) -> None:
+        """A Chinese locale must still be tagged as a domestic client."""
+        self.api = api_module.NiuApi(
+            "user@example.com", "secret", 0, language="zh-CN"
+        )
+        self.api.sn = "TEST-SN"
+        self.set_authenticated()
+        api_module.requests.get.return_value = data_response()
+
+        with patch.object(api_module, "monotonic", return_value=0):
+            self.api.get_vehicles_info(api_module.MOTOINFO_LIST_API_URI)
+
+        headers = api_module.requests.get.call_args.kwargs["headers"]
+        self.assertEqual(headers["Accept-Language"], "zh-CN")
+        self.assertIn("clientIdentifier=Domestic", headers["user-agent"])
+
 
 if __name__ == "__main__":
     unittest.main()
