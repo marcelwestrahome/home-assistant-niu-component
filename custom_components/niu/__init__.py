@@ -5,6 +5,7 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 
 from .api import NiuApi
 from .const import (
@@ -18,6 +19,7 @@ from .const import (
 from .coordinator import NiuDataUpdateCoordinator, required_sensor_groups
 
 _LOGGER = logging.getLogger(__name__)
+LEGACY_DEVICE_IDENTIFIER = (DOMAIN, "Niu E-scooter")
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
@@ -42,6 +44,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         niu_auth[CONF_USERNAME],
         niu_auth[CONF_PASSWORD],
         niu_auth[CONF_SCOOTER_ID],
+        entry.unique_id,
     )
     coordinator = NiuDataUpdateCoordinator(
         hass,
@@ -59,12 +62,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if entry_updates:
         hass.config_entries.async_update_entry(entry, **entry_updates)
 
+    _migrate_device_identifier(hass, entry, str(api.sn))
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(
         entry, _get_platforms(sensors_selected)
     )
 
     return True
+
+
+def _migrate_device_identifier(
+    hass: HomeAssistant, entry: ConfigEntry, serial_number: str
+) -> None:
+    """Replace the old shared device identifier without orphaning its entities."""
+    registry = dr.async_get(hass)
+    if hasattr(registry, "async_get_device_by_identifier"):
+        legacy_device = registry.async_get_device_by_identifier(
+            LEGACY_DEVICE_IDENTIFIER, entry.entry_id
+        )
+    else:
+        legacy_device = registry.async_get_device(
+            identifiers={LEGACY_DEVICE_IDENTIFIER}
+        )
+        if legacy_device and entry.entry_id not in legacy_device.config_entries:
+            return
+
+    if legacy_device is not None:
+        registry.async_update_device(
+            legacy_device.id,
+            new_identifiers={(DOMAIN, serial_number)},
+        )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

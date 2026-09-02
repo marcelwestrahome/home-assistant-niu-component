@@ -74,11 +74,15 @@ class NiuResponseError(NiuApiError):
 
 
 class NiuVehicleNotFoundError(NiuApiError):
-    """The selected vehicle index does not exist in the NIU account."""
+    """The selected vehicle does not exist in the NIU account."""
 
-    def __init__(self, scooter_id: int) -> None:
-        super().__init__(f"NIU vehicle index {scooter_id} does not exist")
-        self.scooter_id = scooter_id
+    def __init__(self, vehicle: int | str) -> None:
+        super().__init__(f"NIU vehicle {vehicle} does not exist")
+        self.vehicle = vehicle
+
+
+class NiuNoVehiclesError(NiuApiError):
+    """The NIU account does not contain any vehicles."""
 
 
 class NiuApi:
@@ -89,10 +93,12 @@ class NiuApi:
         scooter_id,
         language="en-US",
         timezone="UTC",
+        vehicle_sn=None,
     ) -> None:
         self.username = username
         self.password = password
         self.scooter_id = int(scooter_id)
+        self.vehicle_sn = str(vehicle_sn) if vehicle_sn else None
         self.language = language
         self.timezone = timezone
 
@@ -110,7 +116,7 @@ class NiuApi:
         self.sensor_prefix = ""
 
     @classmethod
-    def from_hass(cls, hass, username, password, scooter_id):
+    def from_hass(cls, hass, username, password, scooter_id, vehicle_sn=None):
         """Create NiuApi with locale settings from Home Assistant config."""
         language = hass.config.language
         # Only append country if language is a bare code (e.g. "en"),
@@ -121,12 +127,17 @@ class NiuApi:
             username,
             password,
             scooter_id,
+            vehicle_sn=vehicle_sn,
             language=language,
             timezone=str(hass.config.time_zone),
         )
 
     def initialize(self):
         """Authenticate and load vehicle metadata without polling entity data."""
+        self.select_vehicle(self.get_vehicles(), self.vehicle_sn)
+
+    def get_vehicles(self):
+        """Authenticate and return the vehicles available to the account."""
         self.get_token()
         vehicles = self.get_vehicles_info(MOTOINFO_LIST_API_URI)
         try:
@@ -136,11 +147,35 @@ class NiuApi:
 
         if not isinstance(items, list):
             raise NiuResponseError("NIU vehicle list has an unexpected format")
-        if self.scooter_id < 0 or self.scooter_id >= len(items):
-            raise NiuVehicleNotFoundError(self.scooter_id)
+        if not items:
+            raise NiuNoVehiclesError("No vehicles found in the NIU account")
+        if any(
+            not isinstance(vehicle, dict)
+            or not vehicle.get("sn_id")
+            or not vehicle.get("scooter_name")
+            for vehicle in items
+        ):
+            raise NiuResponseError("NIU vehicle list has an unexpected format")
+        return items
+
+    def select_vehicle(self, items, vehicle_sn=None):
+        """Select a vehicle by serial number, falling back to its legacy index."""
+        if vehicle_sn is not None:
+            try:
+                scooter_id = next(
+                    index
+                    for index, vehicle in enumerate(items)
+                    if str(vehicle.get("sn_id")) == str(vehicle_sn)
+                )
+            except StopIteration as err:
+                raise NiuVehicleNotFoundError(vehicle_sn) from err
+        else:
+            scooter_id = self.scooter_id
+            if scooter_id < 0 or scooter_id >= len(items):
+                raise NiuVehicleNotFoundError(scooter_id)
 
         try:
-            vehicle = items[self.scooter_id]
+            vehicle = items[scooter_id]
             sn = vehicle["sn_id"]
             scooter_name = vehicle["scooter_name"]
         except (KeyError, TypeError) as err:
@@ -148,7 +183,9 @@ class NiuApi:
         if not sn or not scooter_name:
             raise NiuResponseError("NIU vehicle list has an unexpected format")
 
+        self.scooter_id = scooter_id
         self.sn = str(sn)
+        self.vehicle_sn = self.sn
         self.sensor_prefix = str(scooter_name)
 
     def get_token(self):

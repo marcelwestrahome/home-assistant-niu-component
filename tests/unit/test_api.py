@@ -390,6 +390,40 @@ class NiuApiTest(unittest.TestCase):
         self.assertEqual(headers["Accept-Language"], "zh-CN")
         self.assertIn("clientIdentifier=Domestic", headers["user-agent"])
 
+    def test_initialize_prefers_serial_number_over_changed_list_order(self) -> None:
+        """An existing entry must keep its vehicle when NIU reorders the list."""
+        api_module.requests.post.return_value = token_response("access")
+        api_module.requests.get.return_value = FakeResponse(
+            200,
+            {
+                "status": 0,
+                "data": {
+                    "items": [
+                        {"sn_id": "OTHER-SN", "scooter_name": "Other"},
+                        {"sn_id": "TEST-SN", "scooter_name": "Electric moped"},
+                    ]
+                },
+            },
+        )
+        self.api.scooter_id = 0
+        self.api.vehicle_sn = "TEST-SN"
+
+        self.api.initialize()
+
+        self.assertEqual(self.api.scooter_id, 1)
+        self.assertEqual(self.api.sn, "TEST-SN")
+        self.assertEqual(self.api.sensor_prefix, "Electric moped")
+
+    def test_get_vehicles_reports_empty_account(self) -> None:
+        """An account without vehicles should have a specific setup error."""
+        api_module.requests.post.return_value = token_response("access")
+        api_module.requests.get.return_value = FakeResponse(
+            200, {"status": 0, "data": {"items": []}}
+        )
+
+        with self.assertRaises(api_module.NiuNoVehiclesError):
+            self.api.get_vehicles()
+
 
 if __name__ == "__main__":
     unittest.main()

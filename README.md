@@ -15,9 +15,10 @@ With the thanks to pikka97 !!!
 ## Setup
 1. In Home Assistant's settings under "device and services" click on the "Add integration" button.
 2. Search for "NIU" and click on it.
-3. Enter your NIU account credentials and select the sensors you want to add.
-![config flow](images/config_flow_niu_integration.png)
-4. Enjoy your new NIU integration :-)
+3. Enter the NIU account email and password.
+4. Select a vehicle by name and serial number, then select the sensors you want to add.
+5. To add another vehicle, add the NIU integration again and repeat these steps. The same NIU account credentials can be used for multiple vehicles.
+6. Enjoy your new NIU integration :-)
 
 ## Known bugs
 
