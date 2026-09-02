@@ -1,0 +1,35 @@
+services:
+  prepare:
+    image: ${HA_IMAGE:-ghcr.io/home-assistant/home-assistant:stable}
+    entrypoint: ["python3", "/prepare.py"]
+    volumes:
+      - ha-config:/config
+      - ../custom_components/niu:/source:ro
+      - ./prepare.py:/prepare.py:ro
+
+  mock-niu:
+    build:
+      context: ./mock-niu
+      args:
+        HA_IMAGE: ${HA_IMAGE:-ghcr.io/home-assistant/home-assistant:stable}
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  homeassistant:
+    image: ${HA_IMAGE:-ghcr.io/home-assistant/home-assistant:stable}
+    stop_grace_period: 60s
+    depends_on:
+      prepare:
+        condition: service_completed_successfully
+      mock-niu:
+        condition: service_started
+    environment:
+      TZ: ${TZ:-UTC}
+    ports:
+      - "127.0.0.1:8123:8123"
+    volumes:
+      - ha-config:/config
+
+volumes:
+  ha-config:
+    name: ${HA_CONFIG_VOLUME:-niu-ha-config}

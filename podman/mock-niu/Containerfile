@@ -1,0 +1,6 @@
+ARG HA_IMAGE=ghcr.io/home-assistant/home-assistant:stable
+FROM ${HA_IMAGE}
+
+COPY server.py /server.py
+
+ENTRYPOINT ["python3", "/server.py"]

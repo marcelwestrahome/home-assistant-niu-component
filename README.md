@@ -19,6 +19,11 @@ With the thanks to pikka97 !!!
 ![config flow](images/config_flow_niu_integration.png)
 4. Enjoy your new NIU integration :-)
 
+## Local test environment
+
+See [podman/README.md](podman/README.md) for a local Home Assistant environment
+with a simulated NIU API.
+
 ## Known bugs
 
 some people had problems with this version please take the latest 1.o  versions
