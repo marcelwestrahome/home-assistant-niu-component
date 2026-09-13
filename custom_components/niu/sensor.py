@@ -75,21 +75,28 @@ class NiuSensor(NiuCoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """Return a value from the coordinator's cached API response."""
+        value = None
+
         if self._sensor_group == SENSOR_TYPE_BAT:
-            return self._api.getDataBatA(self._data_field)
-        if self._sensor_group == SENSOR_TYPE_BAT2:
-            return self._api.getDataBatB(self._data_field)
-        if self._sensor_group == SENSOR_TYPE_MOTO:
-            return self._api.getDataMoto(self._data_field)
-        if self._sensor_group == SENSOR_TYPE_POS:
-            return self._api.getDataPos(self._data_field)
-        if self._sensor_group == SENSOR_TYPE_DIST:
-            return self._api.getDataDist(self._data_field)
-        if self._sensor_group == SENSOR_TYPE_OVERALL:
-            return self._api.getDataOverall(self._data_field)
-        if self._sensor_group == SENSOR_TYPE_TRACK:
-            return self._api.getDataTrack(self._data_field)
-        return None
+            value = self._api.getDataBatA(self._data_field)
+        elif self._sensor_group == SENSOR_TYPE_BAT2:
+            value = self._api.getDataBatB(self._data_field)
+        elif self._sensor_group == SENSOR_TYPE_MOTO:
+            value = self._api.getDataMoto(self._data_field)
+        elif self._sensor_group == SENSOR_TYPE_POS:
+            value = self._api.getDataPos(self._data_field)
+        elif self._sensor_group == SENSOR_TYPE_DIST:
+            value = self._api.getDataDist(self._data_field)
+        elif self._sensor_group == SENSOR_TYPE_OVERALL:
+            value = self._api.getDataOverall(self._data_field)
+        elif self._sensor_group == SENSOR_TYPE_TRACK:
+            value = self._api.getDataTrack(self._data_field)
+
+        # Convert empty strings to None so Home Assistant doesn't crash on typed sensors (e.g. battery %)
+        if value == "":
+            return None
+
+        return value
 
     @property
     def extra_state_attributes(self) -> dict | None:
@@ -114,7 +121,10 @@ class NiuSensor(NiuCoordinatorEntity, SensorEntity):
                 {
                     "bmsId_b": self._api.getDataBatB("bmsId"),
                     "battery_b": self._api.getDataBatB("batteryCharging"),
-                    "battery_grade_b": self._api.getDataBatB("gradeBattery"),
+                    "battery_grade_b":
+                        self._api.getDataBatB("gradeBattery")
+                        if self._api.getDataBatB("gradeBattery") != ""
+                        else None,
                 }
             )
         return attributes
