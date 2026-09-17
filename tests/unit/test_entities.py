@@ -22,6 +22,7 @@ class FakeApi:
 
     sn = "TEST-SN"
     sensor_prefix = "MQi"
+    language = "en-US"
 
     def __init__(self) -> None:
         self.updateBat = Mock()
@@ -68,6 +69,7 @@ class FakeResponse:
         content: bytes = PNG_IMAGE,
         content_type: str | None = "image/jpeg",
     ) -> None:
+        self.status_code = 200
         self.content = content
         self.headers = {}
         if content_type is not None:
@@ -266,6 +268,29 @@ class EntityTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(image, PNG_IMAGE)
         self.assertEqual(camera.content_type, "image/png")
 
+    async def test_camera_stops_after_first_valid_overseas_thumbnail(self) -> None:
+        """A non-Chinese setup should use the basemap variant immediately."""
+        source_url = (
+            "https://s.niucache.com/app-api-fk/v5/track/thumb/"
+            "TEST-SN/test-ride/image.png"
+        )
+        self.api.getDataTrack = Mock(return_value=source_url)
+        client = FakeClient()
+        camera = self.camera_module.LastTrackCamera(
+            types.SimpleNamespace(), self.coordinator
+        )
+
+        with patch.object(self.camera_module, "get_async_client", return_value=client):
+            image = await camera.async_camera_image()
+
+        self.assertEqual(image, PNG_IMAGE)
+        client.get.assert_awaited_once_with(
+            "https://s.niucache.com/app-api-fk/v5/track/overseas/thumb/"
+            "TEST-SN/test-ride/image.png",
+            timeout=self.camera_module.GET_IMAGE_TIMEOUT,
+            follow_redirects=True,
+        )
+
     async def test_camera_falls_back_after_niu_img_fail_response(self) -> None:
         """The domestic CDN URL should be tried after NIU's overseas URL fails."""
         overseas_url = (
@@ -274,10 +299,15 @@ class EntityTest(unittest.IsolatedAsyncioTestCase):
         domestic_url = "https://app-api.niucache.com/track/thumb/ride.png?token=test"
         self.api.getDataTrack = Mock(return_value=overseas_url)
         client = FakeClient()
+        candidates = self.camera_module._thumbnail_url_candidates(overseas_url)
+        domestic_index = next(
+            index
+            for index, candidate in enumerate(candidates)
+            if "/track/thumb/" in candidate
+        )
         client.get.side_effect = [
-            FakeResponse(NIU_IMAGE_FAILURE, "image/png"),
-            FakeResponse(PNG_IMAGE, "image/png"),
-        ]
+            FakeResponse(NIU_IMAGE_FAILURE, "image/png")
+        ] * domestic_index + [FakeResponse(PNG_IMAGE, "image/png")]
         camera = self.camera_module.LastTrackCamera(
             types.SimpleNamespace(), self.coordinator
         )
@@ -291,20 +321,21 @@ class EntityTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(image, PNG_IMAGE)
         self.assertEqual(
             [call.args[0] for call in client.get.await_args_list],
-            [overseas_url, domestic_url],
+            candidates[: domestic_index + 1],
         )
-        warning.assert_called_once_with(
-            "NIU last-track thumbnail returned invalid image data: %s",
-            "NIU status 200: img fail",
-        )
+        self.assertEqual(candidates[domestic_index], domestic_url)
+        self.assertEqual(warning.call_count, domestic_index)
 
     def test_camera_builds_fallbacks_for_unknown_niu_cdn_host(self) -> None:
         """A new NIU CDN hostname should still use the known track path fallbacks."""
         source_url = "https://cdn-new.niu.test/track/thumb/ride.png?token=test"
 
-        candidates = self.camera_module._thumbnail_url_candidates(source_url)
+        candidates = self.camera_module._thumbnail_url_candidates(
+            source_url, prefer_overseas=True
+        )
 
-        self.assertEqual(candidates[0], source_url)
+        self.assertIn(source_url, candidates)
+        self.assertIn("/track/overseas/thumb/", candidates[0])
         self.assertIn(
             "https://app-api.niucache.com/track/thumb/ride.png?token=test",
             candidates,
@@ -314,26 +345,34 @@ class EntityTest(unittest.IsolatedAsyncioTestCase):
             candidates,
         )
 
-    def test_camera_prefers_verified_domestic_paths_for_niu_gateway(self) -> None:
-        """The working domestic thumbnail path must precede overseas fallbacks."""
+    def test_camera_orders_gateway_paths_by_region(self) -> None:
+        """Overseas and Chinese clients must prefer their matching map variant."""
         source_url = (
             "https://s.niucache.com/app-api-fk/v5/track/overseas/thumb/"
             "TEST-SN/test-ride/image.png?token=test"
         )
 
-        candidates = self.camera_module._thumbnail_url_candidates(source_url)
+        overseas_candidates = self.camera_module._thumbnail_url_candidates(
+            source_url, prefer_overseas=True
+        )
+        domestic_candidates = self.camera_module._thumbnail_url_candidates(
+            source_url, prefer_overseas=False
+        )
 
         self.assertEqual(
-            candidates,
+            overseas_candidates,
             [
-                "https://s.niucache.com/app-api-fk/v5/track/thumb/"
-                "TEST-SN/test-ride/image.png?token=test",
                 source_url,
-                "https://app-api-fk.niu.com/v5/track/thumb/"
-                "TEST-SN/test-ride/image.png?token=test",
                 "https://app-api-fk.niu.com/v5/track/overseas/thumb/"
                 "TEST-SN/test-ride/image.png?token=test",
+                "https://s.niucache.com/app-api-fk/v5/track/thumb/"
+                "TEST-SN/test-ride/image.png?token=test",
+                "https://app-api-fk.niu.com/v5/track/thumb/"
+                "TEST-SN/test-ride/image.png?token=test",
             ],
+        )
+        self.assertTrue(
+            all("/track/thumb/" in candidate for candidate in domestic_candidates[:2])
         )
 
     async def test_camera_throttles_retries_after_invalid_image(self) -> None:

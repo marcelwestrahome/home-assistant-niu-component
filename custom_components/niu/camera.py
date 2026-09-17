@@ -44,7 +44,9 @@ def _detect_image_content_type(content: bytes) -> str | None:
     return None
 
 
-def _thumbnail_url_candidates(url: str) -> list[str]:
+def _thumbnail_url_candidates(
+    url: str, *, prefer_overseas: bool = True
+) -> list[str]:
     """Return known NIU thumbnail URL variants without duplicates."""
     parsed = urlsplit(url)
     if not any(
@@ -63,9 +65,12 @@ def _thumbnail_url_candidates(url: str) -> list[str]:
         gateway_domestic_path = parsed.path.replace(
             "/track/overseas/thumb/", "/track/thumb/"
         )
+        gateway_overseas_path = gateway_domestic_path.replace(
+            "/track/thumb/", "/track/overseas/thumb/"
+        )
         variants = [
             urlunsplit(parsed._replace(path=gateway_domestic_path)),
-            url,
+            urlunsplit(parsed._replace(path=gateway_overseas_path)),
             urlunsplit(
                 parsed._replace(netloc="app-api-fk.niu.com", path=domestic_path)
             ),
@@ -87,7 +92,11 @@ def _thumbnail_url_candidates(url: str) -> list[str]:
             ),
             urlunsplit(parsed._replace(netloc="app-api.niu.com", path=domestic_path)),
         ]
-    return list(dict.fromkeys(variants))
+    preferred_path = "overseas" if prefer_overseas else "domestic"
+    return sorted(
+        dict.fromkeys(variants),
+        key=lambda candidate: _thumbnail_path_type(candidate) != preferred_path,
+    )
 
 
 def _thumbnail_path_type(url: str) -> str:
@@ -152,7 +161,10 @@ class LastTrackCamera(NiuCoordinatorEntity, Camera):
         if last_track_url == self._failed_url and monotonic() < self._failure_retry_at:
             return self._last_image
 
-        candidates = _thumbnail_url_candidates(last_track_url)
+        candidates = _thumbnail_url_candidates(
+            last_track_url,
+            prefer_overseas=not self._api.language.startswith("zh"),
+        )
         _LOGGER.debug(
             "Trying %d NIU last-track thumbnail candidate(s) "
             "(source host: %s, path type: %s)",

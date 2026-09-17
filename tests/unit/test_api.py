@@ -390,6 +390,34 @@ class NiuApiTest(unittest.TestCase):
         self.assertEqual(headers["Accept-Language"], "zh-CN")
         self.assertIn("clientIdentifier=Domestic", headers["user-agent"])
 
+    def test_track_thumbnail_uses_latest_completed_track(self) -> None:
+        """An in-progress track must not replace the last useful route image."""
+        incomplete_track = {
+            "date": "20260917",
+            "startTime": 1_789_663_175_529,
+            "endTime": 1_789_663_175_529,
+            "distance": 0,
+            "ridingtime": 0,
+            "track_thumb": "https://example.test/incomplete-track.png",
+        }
+        completed_track = {
+            "date": "20260916",
+            "startTime": 1_789_562_220_000,
+            "endTime": 1_789_563_480_000,
+            "distance": 9300,
+            "ridingtime": 1260,
+            "track_thumb": "https://example.test/completed-track.png",
+        }
+        self.api.dataTrackInfo = {
+            "status": 0,
+            "data": [incomplete_track, completed_track],
+        }
+
+        self.assertEqual(
+            self.api.getDataTrack("track_thumb"),
+            "https://example.test/completed-track.png",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -392,6 +392,27 @@ class NiuApi:
             json={"index": "0", "pagesize": 10, "sn": self.sn},
         )
 
+    @staticmethod
+    def _latest_completed_track(payload):
+        data = payload.get("data") if isinstance(payload, dict) else None
+        if isinstance(data, dict):
+            data = data.get("items")
+        if not isinstance(data, list):
+            return None
+        for item in data:
+            if not isinstance(item, dict):
+                continue
+            try:
+                distance = float(item.get("distance", 0))
+                riding_time = float(item.get("ridingtime", 0))
+                start_time = float(item.get("startTime", 0))
+                end_time = float(item.get("endTime", 0))
+            except (TypeError, ValueError):
+                continue
+            if distance > 0 and (riding_time > 0 or end_time > start_time):
+                return item
+        return None
+
     def getDataBatA(self, id_field):
         try:
             return self.dataBat["data"]["batteries"]["compartmentA"][id_field]
@@ -436,7 +457,10 @@ class NiuApi:
 
     def getDataTrack(self, id_field):
         try:
-            value = self.dataTrackInfo["data"][0][id_field]
+            track = self.dataTrackInfo["data"][0]
+            if id_field == "track_thumb":
+                track = self._latest_completed_track(self.dataTrackInfo)
+            value = track[id_field]
         except (IndexError, KeyError, TypeError):
             return None
 
@@ -453,17 +477,7 @@ class NiuApi:
             except (OSError, TypeError, ValueError):
                 return None
         if id_field == "track_thumb":
-            if not isinstance(value, str):
-                return None
-            thumburl = value
-            # Rewrite domestic CDN URLs to overseas; skip if already overseas
-            if "app-api.niucache.com" in thumburl:
-                thumburl = thumburl.replace(
-                    "app-api.niucache.com", "app-api-fk.niu.com"
-                )
-            if "/track/thumb/" in thumburl and "/track/overseas/thumb/" not in thumburl:
-                thumburl = thumburl.replace("/track/thumb/", "/track/overseas/thumb/")
-            return thumburl
+            return value if isinstance(value, str) else None
         return value
 
     def updateBat(self):
