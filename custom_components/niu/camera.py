@@ -11,6 +11,7 @@ from urllib.parse import urlsplit, urlunsplit
 import httpx
 
 from homeassistant.components.camera import Camera
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.httpx_client import get_async_client
 
 from .const import DOMAIN
@@ -119,7 +120,21 @@ def _invalid_image_description(content: bytes) -> str:
 async def async_setup_entry(hass, entry, async_add_entities) -> None:
     """Set up the last-track camera from a config entry."""
     coordinator: NiuDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    _migrate_unique_id(hass, entry.entry_id, coordinator.data)
     async_add_entities([LastTrackCamera(hass, coordinator)])
+
+
+def _migrate_unique_id(hass, entry_id: str, api) -> None:
+    """Replace the name-based camera ID for this config entry."""
+    registry = er.async_get(hass)
+    unique_id = f"camera.niu_scooter_{api.sn}_last_track"
+    for entity in er.async_entries_for_config_entry(registry, entry_id):
+        if (
+            entity.domain == "camera"
+            and entity.platform == DOMAIN
+            and entity.unique_id != unique_id
+        ):
+            registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
 
 
 class LastTrackCamera(NiuCoordinatorEntity, Camera):
@@ -131,8 +146,7 @@ class LastTrackCamera(NiuCoordinatorEntity, Camera):
         self.hass = hass
         self._api = coordinator.data
         self._attr_name = f"{self._api.sensor_prefix} Last Track Camera"
-        # Preserve GenericCamera's previous identifier to avoid a duplicate entity.
-        self._attr_unique_id = self._attr_name
+        self._attr_unique_id = f"camera.niu_scooter_{self._api.sn}_last_track"
         self._attr_is_streaming = False
         self._last_url: str | None = None
         self._last_image: bytes | None = None

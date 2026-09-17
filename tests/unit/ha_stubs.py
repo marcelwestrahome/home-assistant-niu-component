@@ -144,6 +144,16 @@ def install_homeassistant_stubs() -> None:
     helpers.__path__ = []
     device_registry = types.ModuleType("homeassistant.helpers.device_registry")
     device_registry.DeviceInfo = DeviceInfo
+    device_registry.async_get = lambda hass: hass.device_registry
+    entity_registry = types.ModuleType("homeassistant.helpers.entity_registry")
+    entity_registry.async_get = lambda hass: hass.entity_registry
+    entity_registry.async_entries_for_config_entry = (
+        lambda registry, entry_id: [
+            entity
+            for entity in registry.entries
+            if entity.config_entry_id == entry_id
+        ]
+    )
     httpx_client = types.ModuleType("homeassistant.helpers.httpx_client")
     httpx_client.get_async_client = lambda hass, verify_ssl=True: None
     selector = types.ModuleType("homeassistant.helpers.selector")
@@ -174,6 +184,7 @@ def install_homeassistant_stubs() -> None:
         "homeassistant.core": core,
         "homeassistant.helpers": helpers,
         "homeassistant.helpers.device_registry": device_registry,
+        "homeassistant.helpers.entity_registry": entity_registry,
         "homeassistant.helpers.httpx_client": httpx_client,
         "homeassistant.helpers.selector": selector,
         "homeassistant.helpers.update_coordinator": update_coordinator,

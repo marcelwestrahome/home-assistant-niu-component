@@ -84,6 +84,25 @@ class FakeClient:
         self.get = AsyncMock(return_value=FakeResponse())
 
 
+class FakeEntityRegistry:
+    """Entity registry subset used for camera ID migration."""
+
+    def __init__(self, config_entry_id="entry-1") -> None:
+        self.entries = [
+            types.SimpleNamespace(
+                config_entry_id=config_entry_id,
+                domain="camera",
+                platform="niu",
+                unique_id="MQi Last Track Camera",
+                entity_id="camera.mqi_last_track_camera",
+            )
+        ]
+        self.updated = []
+
+    def async_update_entity(self, entity_id, **changes) -> None:
+        self.updated.append((entity_id, changes))
+
+
 class EntityTest(unittest.IsolatedAsyncioTestCase):
     """Verify entities consume only coordinator-cached state."""
 
@@ -128,8 +147,9 @@ class EntityTest(unittest.IsolatedAsyncioTestCase):
         self.api.updateBat.assert_not_called()
         self.assertEqual(
             sensor_a._attr_device_info["identifiers"],
-            {("niu", "Niu E-scooter")},
+            {("niu", "TEST-SN")},
         )
+        self.assertEqual(sensor_a._attr_device_info["name"], "MQi")
         self.assertIsInstance(sensor_a._attr_device_info["model"], str)
         self.assertEqual(sensor_a._attr_device_info, sensor_b._attr_device_info)
 
@@ -198,12 +218,49 @@ class EntityTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(first, PNG_IMAGE)
         self.assertEqual(second, PNG_IMAGE)
         self.assertEqual(client.get.call_count, 1)
-        self.assertEqual(camera._attr_unique_id, "MQi Last Track Camera")
+        self.assertEqual(
+            camera._attr_unique_id, "camera.niu_scooter_TEST-SN_last_track"
+        )
         self.assertEqual(
             camera._attr_device_info["identifiers"],
-            {("niu", "Niu E-scooter")},
+            {("niu", "TEST-SN")},
         )
         self.assertIsInstance(camera._attr_device_info["model"], str)
+
+    async def test_camera_migrates_legacy_unique_id_for_its_config_entry(self) -> None:
+        """A legacy camera should retain its entity through the serial-ID change."""
+        entry = types.SimpleNamespace(entry_id="entry-1")
+        registry = FakeEntityRegistry()
+        hass = types.SimpleNamespace(
+            data={self.const.DOMAIN: {entry.entry_id: self.coordinator}},
+            entity_registry=registry,
+        )
+        async_add_entities = Mock()
+
+        await self.camera_module.async_setup_entry(hass, entry, async_add_entities)
+
+        self.assertEqual(
+            registry.updated,
+            [
+                (
+                    "camera.mqi_last_track_camera",
+                    {"new_unique_id": "camera.niu_scooter_TEST-SN_last_track"},
+                )
+            ],
+        )
+        camera = async_add_entities.call_args.args[0][0]
+        self.assertEqual(
+            camera._attr_unique_id, "camera.niu_scooter_TEST-SN_last_track"
+        )
+
+    def test_camera_does_not_migrate_another_config_entry(self) -> None:
+        """A same-named camera owned by another entry must not be changed."""
+        registry = FakeEntityRegistry(config_entry_id="another-entry")
+        hass = types.SimpleNamespace(entity_registry=registry)
+
+        self.camera_module._migrate_unique_id(hass, "entry-1", self.api)
+
+        self.assertEqual(registry.updated, [])
 
     async def test_camera_is_on_before_first_thumbnail_download(self) -> None:
         """The camera proxy must be usable before its first image request."""

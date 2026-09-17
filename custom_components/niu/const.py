@@ -12,6 +12,7 @@ DOMAIN = "niu"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
 CONF_SCOOTER_ID = "scooter_id"
+CONF_VEHICLE = "vehicle"
 CONF_AUTH = "conf_auth"
 CONF_SENSORS = "sensors_selected"
 

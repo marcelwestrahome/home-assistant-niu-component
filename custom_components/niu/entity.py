@@ -14,10 +14,10 @@ class NiuCoordinatorEntity(CoordinatorEntity[NiuDataUpdateCoordinator]):
 
     def __init__(self, coordinator: NiuDataUpdateCoordinator) -> None:
         super().__init__(coordinator)
-        device_name = "Niu E-scooter"
+        api = coordinator.data
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, device_name)},
-            name=device_name,
+            identifiers={(DOMAIN, str(api.sn))},
+            name=api.sensor_prefix,
             manufacturer="NIU",
-            model="E-scooter",
+            model="Vehicle",
         )

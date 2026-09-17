@@ -6,20 +6,26 @@
         "error": {
             "cannot_connect": "Unable to connect to NIU. Please try again later.",
             "invalid_auth": "The email address or password is incorrect.",
-            "invalid_scooter": "The selected vehicle index does not exist.",
+            "invalid_scooter": "The selected vehicle is no longer available in the NIU account.",
+            "no_vehicles": "No vehicles were found in the NIU account.",
             "unknown": "NIU returned an unexpected response. Please try again later."
         },
         "step": {
             "user": {
                 "data": {
                     "username": "NIU account email",
-                    "password": "Password",
-                    "scooter_id": "Vehicle index",
+                    "password": "Password"
+                },
+                "data_description": {
+                    "username": "Email address used to sign in to the NIU account being configured."
+                }
+            },
+            "vehicle": {
+                "data": {
+                    "vehicle": "Vehicle",
                     "sensors_selected": "Sensors"
                 },
                 "data_description": {
-                    "username": "Email address used to sign in to your NIU account.",
-                    "scooter_id": "Zero-based position of the vehicle in your NIU account (0 selects the first vehicle).",
                     "sensors_selected": "Select the sensors to add to Home Assistant."
                 }
             }
