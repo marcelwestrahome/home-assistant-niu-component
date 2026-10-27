@@ -28,10 +28,10 @@ class FakeApi:
         self.updateMoto = Mock()
 
     def getDataBatA(self, field):
-        return {"batteryCharging": 81}.get(field)
+        return {"batteryCharging": 81, "isConnected": False}.get(field)
 
     def getDataBatB(self, field):
-        return {"batteryCharging": 74}.get(field)
+        return {"batteryCharging": 74, "isConnected": True}.get(field)
 
     def getDataMoto(self, field):
         return None
@@ -132,6 +132,23 @@ class EntityTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIsInstance(sensor_a._attr_device_info["model"], str)
         self.assertEqual(sensor_a._attr_device_info, sensor_b._attr_device_info)
+
+    def test_battery_connected_sensors_report_each_compartment(self) -> None:
+        """Each compartment's isConnected flag has its own sensor."""
+        sensors = {}
+        for key in ("Isconnected", "IsconnectedB"):
+            config = self.const.SENSOR_TYPES[key]
+            sensors[key] = self.sensor_module.NiuSensor(
+                self.coordinator, key, *config
+            )
+
+        self.assertIn("IsconnectedB", self.const.AVAILABLE_SENSORS)
+        self.assertIs(sensors["Isconnected"].native_value, False)
+        self.assertIs(sensors["IsconnectedB"].native_value, True)
+        self.assertNotEqual(
+            sensors["Isconnected"]._attr_unique_id,
+            sensors["IsconnectedB"]._attr_unique_id,
+        )
 
     async def test_legacy_battery_entities_keep_names_and_unique_ids(self) -> None:
         """Reloading an old config entry must restore its original entities."""
