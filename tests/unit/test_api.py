@@ -292,7 +292,10 @@ class NiuApiTest(unittest.TestCase):
         ]
         api_module.requests.post.return_value = token_response("new-access")
 
-        with patch.object(api_module, "monotonic", return_value=0):
+        with (
+            patch.object(api_module, "monotonic", return_value=0),
+            self.assertLogs(api_module._LOGGER, "INFO") as logs,
+        ):
             result = self.api.get_info(api_module.MOTOR_BATTERY_API_URI)
 
         self.assertEqual(result["data"]["value"], "recovered")
@@ -300,6 +303,7 @@ class NiuApiTest(unittest.TestCase):
         self.assertEqual(api_module.requests.post.call_count, 1)
         retry_headers = api_module.requests.get.call_args_list[1].kwargs["headers"]
         self.assertEqual(retry_headers["token"], "new-access")
+        self.assertIn("rejected the access token (status 1131)", logs.output[0])
 
     def test_status_1131_relogs_in_without_refresh_token(self) -> None:
         """Without a refresh token, status 1131 should fall back to a password login."""
