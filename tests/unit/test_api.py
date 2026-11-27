@@ -283,6 +283,63 @@ class NiuApiTest(unittest.TestCase):
 
         self.assertEqual(raised.exception.retry_after, 120)
 
+    def test_status_1131_refreshes_token_and_retries_request_once(self) -> None:
+        """NIU reports a rejected token as HTTP 200 with status 1131."""
+        self.set_authenticated("old-access", refresh_token="refresh-token")
+        api_module.requests.get.side_effect = [
+            FakeResponse(200, {"status": 1131, "desc": "Login information error"}),
+            data_response("recovered"),
+        ]
+        api_module.requests.post.return_value = token_response("new-access")
+
+        with (
+            patch.object(api_module, "monotonic", return_value=0),
+            self.assertLogs(api_module._LOGGER, "INFO") as logs,
+        ):
+            result = self.api.get_info(api_module.MOTOR_BATTERY_API_URI)
+
+        self.assertEqual(result["data"]["value"], "recovered")
+        self.assertEqual(api_module.requests.get.call_count, 2)
+        self.assertEqual(api_module.requests.post.call_count, 1)
+        retry_headers = api_module.requests.get.call_args_list[1].kwargs["headers"]
+        self.assertEqual(retry_headers["token"], "new-access")
+        self.assertIn("rejected the access token (status 1131)", logs.output[0])
+
+    def test_status_1131_relogs_in_without_refresh_token(self) -> None:
+        """Without a refresh token, status 1131 should fall back to a password login."""
+        self.set_authenticated("old-access")
+        api_module.requests.get.side_effect = [
+            FakeResponse(200, {"status": 1131, "desc": "Login information error"}),
+            data_response("relogged"),
+        ]
+        api_module.requests.post.return_value = token_response("password-access")
+
+        with patch.object(api_module, "monotonic", return_value=0):
+            result = self.api.get_info(api_module.MOTOR_BATTERY_API_URI)
+
+        self.assertEqual(result["data"]["value"], "relogged")
+        login_data = api_module.requests.post.call_args.kwargs["data"]
+        self.assertEqual(login_data["grant_type"], "password")
+
+    def test_second_status_1131_raises_authentication_error_without_looping(
+        self,
+    ) -> None:
+        """Recovery after status 1131 should retry exactly once."""
+        self.set_authenticated("old-access", refresh_token="refresh-token")
+        api_module.requests.get.side_effect = [
+            FakeResponse(200, {"status": 1131, "desc": "Login information error"}),
+            FakeResponse(200, {"status": 1131, "desc": "Login information error"}),
+        ]
+        api_module.requests.post.return_value = token_response("new-access")
+        with (
+            patch.object(api_module, "monotonic", return_value=0),
+            self.assertRaises(api_module.NiuAuthenticationError),
+        ):
+            self.api.get_info(api_module.MOTOR_BATTERY_API_URI)
+
+        self.assertEqual(api_module.requests.get.call_count, 2)
+        self.assertEqual(api_module.requests.post.call_count, 1)
+
     def test_niu_status_error_raises_response_error(self) -> None:
         """HTTP 200 responses with a NIU error status should not look successful."""
         self.set_authenticated()

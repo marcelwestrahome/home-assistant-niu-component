@@ -26,6 +26,9 @@ TOKEN_REFRESH_MARGIN = 5 * 60
 TOKEN_REFRESH_FALLBACK = 22 * 60 * 60
 
 
+# NIU statuses in an HTTP 200 body that mean the access token is no longer accepted
+NIU_AUTH_ERROR_STATUSES = {1131}
+
 class NiuApiError(Exception):
     """Base exception for NIU API failures."""
 
@@ -269,15 +272,39 @@ class NiuApi:
         attempted_generation = self._auth_generation
         response = self._perform_request(method, path, headers=headers, **kwargs)
 
-        if response.status_code == 401:
+        rejection = self._token_rejection(response)
+        if rejection:
+            _LOGGER.info(
+                "NIU rejected the access token (%s); re-authenticating", rejection
+            )
             self._recover_authentication(attempted_generation)
             response = self._perform_request(method, path, headers=headers, **kwargs)
-            if response.status_code == 401:
+            if self._token_rejection(response):
                 raise NiuAuthenticationError(
                     "NIU rejected authentication after token recovery"
                 )
 
         return self._parse_response(response)
+
+    @staticmethod
+    def _token_rejection(response) -> str | None:
+        """Return why NIU rejected the access token, or None if it didn't.
+
+        NIU answers either with HTTP 401 or with HTTP 200 and a NIU status such as
+        1131 ("Login information error") in the JSON body.
+        """
+        if response.status_code == 401:
+            return "HTTP 401"
+        if response.status_code != 200:
+            return None
+        try:
+            payload = response.json()
+        except (ValueError, requests.exceptions.RequestException):
+            return None
+        status = payload.get("status") if isinstance(payload, dict) else None
+        if status in NIU_AUTH_ERROR_STATUSES:
+            return f"status {status}"
+        return None
 
     def _perform_request(
         self,
