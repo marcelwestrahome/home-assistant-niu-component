@@ -9,7 +9,14 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import NiuApi, NiuApiError, NiuRateLimitError
+from .api import (
+    NiuApi,
+    NiuApiError,
+    NiuHttpError,
+    NiuRateLimitError,
+    NiuResponseError,
+    NiuServerError,
+)
 from .const import (
     DOMAIN,
     SENSOR_TYPE_BAT,
@@ -59,6 +66,7 @@ class NiuDataUpdateCoordinator(DataUpdateCoordinator[NiuApi]):
         self.api = api
         self.sensor_groups = frozenset(sensor_groups)
         self._initialized = False
+        self._failed_groups: set[str] = set()
 
     def _sync_update_data(self) -> NiuApi:
         """Initialize once, then update each required endpoint exactly once."""
@@ -70,18 +78,41 @@ class NiuDataUpdateCoordinator(DataUpdateCoordinator[NiuApi]):
         _LOGGER.debug(
             "Updating NIU data groups: %s", ", ".join(sorted(self.sensor_groups))
         )
-        if self.sensor_groups & {SENSOR_TYPE_BAT, SENSOR_TYPE_BAT2}:
-            self.api.updateBat()
-        if self.sensor_groups & {
-            SENSOR_TYPE_MOTO,
-            SENSOR_TYPE_POS,
-            SENSOR_TYPE_DIST,
-        }:
-            self.api.updateMoto()
-        if SENSOR_TYPE_OVERALL in self.sensor_groups:
-            self.api.updateMotoInfo()
-        if SENSOR_TYPE_TRACK in self.sensor_groups:
-            self.api.updateTrackInfo()
+        attempted: dict[str, bool] = {}
+        first_error: NiuApiError | None = None
+
+        updates = (
+            ("battery", {SENSOR_TYPE_BAT, SENSOR_TYPE_BAT2}, self.api.updateBat),
+            (
+                "scooter",
+                {SENSOR_TYPE_MOTO, SENSOR_TYPE_POS, SENSOR_TYPE_DIST},
+                self.api.updateMoto,
+            ),
+            ("totals", {SENSOR_TYPE_OVERALL}, self.api.updateMotoInfo),
+            ("track", {SENSOR_TYPE_TRACK}, self.api.updateTrackInfo),
+        )
+        for name, groups, update in updates:
+            if not self.sensor_groups & groups:
+                continue
+            try:
+                update()
+            except (NiuResponseError, NiuHttpError, NiuServerError) as err:
+                # NIU sometimes rejects a single endpoint (e.g. status 1131) while
+                # the others keep working. Keep that endpoint's last data and carry
+                # on, so one bad endpoint doesn't take every entity down.
+                attempted[name] = False
+                first_error = first_error or err
+                if name not in self._failed_groups:
+                    _LOGGER.warning("NIU %s data update failed: %s", name, err)
+                self._failed_groups.add(name)
+            else:
+                attempted[name] = True
+                if name in self._failed_groups:
+                    _LOGGER.info("NIU %s data update recovered", name)
+                    self._failed_groups.discard(name)
+
+        if attempted and not any(attempted.values()) and first_error is not None:
+            raise first_error
         return self.api
 
     async def _async_update_data(self) -> NiuApi:
